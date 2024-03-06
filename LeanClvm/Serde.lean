@@ -4,10 +4,11 @@ import LeanClvm.Node
 
 def MAX_SINGLE_BYTE: UInt8 := 0x7f
 
+/-
 def my_panic :=
   let t := [1]
   t[1]!
-
+-/
 
 def atom_to_serialized_bytes (atom : Array UInt8) : Array UInt8 :=
   let size: Nat := atom.size
@@ -26,7 +27,7 @@ def atom_to_serialized_bytes (atom : Array UInt8) : Array UInt8 :=
   else if size <= 0x400000000 then
     #[(0xF8.lor (size.shiftRight 32)).toUInt8, ((size.shiftRight 24).land 0xFF).toUInt8, ((size.shiftRight 16).land 0xFF).toUInt8, ((size.shiftRight 8).land 0xFF).toUInt8, ((size.shiftRight 0).land 0xFF).toUInt8] ++ atom
   else
-    let _o := my_panic
+    -- let _o := my_panic
     #[]
 
 

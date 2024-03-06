@@ -1,11 +1,13 @@
 import LeanClvm.Atom
 import LeanClvm.Result
+import LeanClvm.Sha256
 
 
 inductive Node
   | atom : Array UInt8 → Node
   | pair : Node → Node → Node
   deriving Repr
+
 
 def Node.nil := Node.atom #[]
 def Node.one := Node.atom #[1]
@@ -26,8 +28,6 @@ def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node :=
 
 def node_at (p: Nat) (node: Node): Result Node := node_at_wdepth (p+1) p node
 
-
-def sha256 (data: Array UInt8): Array UInt8 := data
 
 
 def tree_hash (hash: Array UInt8 -> Array UInt8) (node: Node): Array UInt8 :=
