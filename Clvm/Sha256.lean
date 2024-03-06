@@ -3,7 +3,7 @@
 
 -- SHA-256 state
 
-import LeanClvm.Hex
+import Clvm.Hex
 
 
 structure Sha256_state :=

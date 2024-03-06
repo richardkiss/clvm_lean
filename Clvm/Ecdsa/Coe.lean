@@ -15,9 +15,9 @@ import Mathlib.Tactic.Ring
 import Mathlib.Tactic.LibrarySearch
 import Mathlib.Tactic.FieldSimp
 
-import LeanClvm.Ecdsa.Affine
-import LeanClvm.Ecdsa.Curve
-import LeanClvm.Ecdsa.Jacobian
+import Clvm.Ecdsa.Affine
+import Clvm.Ecdsa.Curve
+import Clvm.Ecdsa.Jacobian
 
 
 theorem affine_to_jac_works {curve : Curve} {x y z : ZMod curve.p} :

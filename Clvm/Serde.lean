@@ -1,5 +1,5 @@
-import LeanClvm.Hex
-import LeanClvm.Node
+import Clvm.Hex
+import Clvm.Node
 
 
 def MAX_SINGLE_BYTE: UInt8 := 0x7f

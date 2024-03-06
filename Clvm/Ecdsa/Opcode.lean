@@ -9,13 +9,13 @@ import Init.Data.UInt
 import Init.Data.Fin
 import Init.Data.Nat
 
-import LeanClvm.Atom
-import LeanClvm.Ecdsa.Affine
-import LeanClvm.Ecdsa.Bls12381
-import LeanClvm.Ecdsa.Coe
-import LeanClvm.Ecdsa.Curve
-import LeanClvm.Ecdsa.Jacobian
-import LeanClvm.Ecdsa.Secp256k1
+import Clvm.Atom
+import Clvm.Ecdsa.Affine
+import Clvm.Ecdsa.Bls12381
+import Clvm.Ecdsa.Coe
+import Clvm.Ecdsa.Curve
+import Clvm.Ecdsa.Jacobian
+import Clvm.Ecdsa.Secp256k1
 
 import Mathlib.Data.Nat.Prime
 import Mathlib.Data.ZMod.Basic

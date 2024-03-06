@@ -1,5 +1,5 @@
-import LeanClvm.Result
-import LeanClvm.Serde
+import Clvm.Result
+import Clvm.Serde
 
 
 def show_result (result: Result Node) : String :=

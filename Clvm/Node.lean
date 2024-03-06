@@ -1,6 +1,6 @@
-import LeanClvm.Atom
-import LeanClvm.Result
-import LeanClvm.Sha256
+import Clvm.Atom
+import Clvm.Result
+import Clvm.Sha256
 
 
 inductive Node

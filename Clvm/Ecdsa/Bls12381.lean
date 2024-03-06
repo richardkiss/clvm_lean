@@ -1,7 +1,7 @@
-import LeanClvm.Ecdsa.Affine
-import LeanClvm.Ecdsa.Coe
-import LeanClvm.Ecdsa.Curve
-import LeanClvm.Ecdsa.Jacobian
+import Clvm.Ecdsa.Affine
+import Clvm.Ecdsa.Coe
+import Clvm.Ecdsa.Curve
+import Clvm.Ecdsa.Jacobian
 
 import Mathlib.Data.ZMod.Basic
 

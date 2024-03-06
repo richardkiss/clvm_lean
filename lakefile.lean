@@ -13,7 +13,7 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"
 
 
-lean_lib «LeanClvm» where
+lean_lib «Clvm» where
   -- add any library configuration options here
 
 

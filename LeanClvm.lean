@@ -1,3 +1,3 @@
--- This module serves as the root of the `LeanClvm` library.
+-- This module serves as the root of the `Clvm` library.
 -- Import modules here that should be built as part of the library.
-import «LeanClvm».Basic
+import «Clvm».Basic

@@ -1,7 +1,7 @@
-import LeanClvm.Node
-import LeanClvm.Ecdsa.Basic
-import LeanClvm.Ecdsa.Bls12381
-import LeanClvm.Ecdsa.Opcode
+import Clvm.Node
+import Clvm.Ecdsa.Basic
+import Clvm.Ecdsa.Bls12381
+import Clvm.Ecdsa.Opcode
 
 inductive NResult (α: Type) : Type
 | ok : α → NResult α

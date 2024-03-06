@@ -1,12 +1,12 @@
-import LeanClvm.Atom
-import LeanClvm.Casts
-import LeanClvm.Ecdsa.Basic
-import LeanClvm.Ecdsa.Bls12381
-import LeanClvm.Ecdsa.Jacobian
-import LeanClvm.Serde
-import LeanClvm.Sha256
-import LeanClvm.Result
-import LeanClvm.Util
+import Clvm.Atom
+import Clvm.Casts
+import Clvm.Ecdsa.Basic
+import Clvm.Ecdsa.Bls12381
+import Clvm.Ecdsa.Jacobian
+import Clvm.Serde
+import Clvm.Sha256
+import Clvm.Result
+import Clvm.Util
 
 def extend (a : Array UInt8) (size : Nat) : Array UInt8 :=
   let v : UInt8 := match a[0]? with

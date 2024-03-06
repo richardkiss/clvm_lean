@@ -1,8 +1,8 @@
-import LeanClvm.Node
-import LeanClvm.Opcodes
-import LeanClvm.Result
-import LeanClvm.Serde
-import LeanClvm.Util
+import Clvm.Node
+import Clvm.Opcodes
+import Clvm.Result
+import Clvm.Serde
+import Clvm.Util
 
 
 def OP_Q: UInt8 := 0x01

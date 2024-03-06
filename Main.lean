@@ -1,9 +1,9 @@
-import LeanClvm.Node
-import LeanClvm.Hex
-import LeanClvm.Result
-import LeanClvm.Run
-import LeanClvm.Serde
-import LeanClvm.Util
+import Clvm.Node
+import Clvm.Hex
+import Clvm.Result
+import Clvm.Run
+import Clvm.Serde
+import Clvm.Util
 
 
 def do_run (node : Node) : String :=
