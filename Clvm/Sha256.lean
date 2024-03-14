@@ -3,6 +3,7 @@
 
 -- SHA-256 state
 
+import Clvm.Atom
 import Clvm.Hex
 
 
@@ -163,8 +164,9 @@ def test_str := a_str ++ a_str
 #eval ((sha256_32 test_str).map u32_to_u8).map b2h
 
 
-def sha256 (msg : Array UInt8) : Array UInt8 :=
+def sha256 (msg : Array UInt8) : Bytes32 :=
   let u32s := sha256_32 msg
   let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
   let s: List UInt8 := r.join
-  s.toArray
+  let s: Array UInt8 := s.toArray
+  Bytes32.mk s

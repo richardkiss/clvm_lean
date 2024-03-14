@@ -9,15 +9,71 @@ inductive NResult (α: Type) : Type
 deriving Repr
 
 
-def node_to_list (args: Node) (cast: Node → NResult α): NResult (List α) :=
+def NResult.is_ok {α: Type} (r: NResult α) : Bool :=
+  match r with
+  | NResult.ok _ => True
+  | NResult.err _ _ => False
+
+
+def node_to_list_1 (args: Node) (cast: Node → NResult α): NResult (List α) :=
   match args with
   | Node.atom #[] => NResult.ok []
   | Node.pair first rest => match cast first with
     | NResult.err a b => NResult.err a b
-    | NResult.ok v => match node_to_list rest cast with
+    | NResult.ok v => match node_to_list_1 rest cast with
       | NResult.err a b => NResult.err a b
       | NResult.ok rest => NResult.ok (v :: rest)
   | _ => NResult.err args "unexpected terminator"
+
+
+
+def node_to_list_int (args: Node) (cast: Node → NResult Int): NResult (List Int) :=
+  match args with
+  | Node.atom #[] => NResult.ok []
+  | Node.pair first rest => match cast first with
+    | NResult.err a b => NResult.err a b
+    | NResult.ok v => match node_to_list_1 rest cast with
+      | NResult.err a b => NResult.err a b
+      | NResult.ok rest => NResult.ok (v :: rest)
+  | _ => NResult.err args "unexpected terminator"
+
+
+def node_to_node_list_terminator (args: Node) : (List Node) × Atom :=
+  match args with
+  | Node.atom a => ⟨[], a⟩
+  | Node.pair first rest =>
+    let ⟨ rest, terminator⟩ := node_to_node_list_terminator rest
+    ⟨first :: rest, terminator⟩
+
+
+def node_to_node_list (args: Node) : NResult (List Node) :=
+  let r := node_to_node_list_terminator args
+  match r with
+  | (l, #[]) => NResult.ok l
+  | _ => NResult.err args "unexpected terminator"
+
+
+def list_nresult_to_nresult_list (args: List (NResult α)): NResult (List α) :=
+  match args with
+  | [] => NResult.ok []
+  | (NResult.err obj msg) :: _ => NResult.err obj msg
+  | (NResult.ok v) :: rest => match list_nresult_to_nresult_list rest with
+    | NResult.err obj msg => NResult.err obj msg
+    | NResult.ok rest => NResult.ok (v :: rest)
+
+
+def node_to_list (args: Node) (cast: Node → NResult α): NResult (List α) :=
+  let step1 : List Node × Atom := node_to_node_list_terminator args
+  -- need to prove that right node is nil
+  if step1.2.size > 0 then
+    NResult.err args "unexpected terminator"
+  else
+    let step2 : List (NResult α) := step1.1.map cast
+    -- need to prove that all casts "succeed"
+    let step3 : NResult (List α) := list_nresult_to_nresult_list step2
+    match step3 with
+    | NResult.err a b => NResult.err a b
+    | NResult.ok l => NResult.ok l
 
 
 

@@ -22,7 +22,7 @@ import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Tactic.Ring
 
-import Mathlib.Tactic.LibrarySearch
+-- import Mathlib.Tactic.LibrarySearch
 import Mathlib.Tactic.FieldSimp
 
 

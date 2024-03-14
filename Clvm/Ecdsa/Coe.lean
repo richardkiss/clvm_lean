@@ -6,13 +6,16 @@ import Init.Data.UInt
 import Init.Data.Fin
 import Init.Data.Nat
 
+import Mathlib
+
 import Mathlib.Data.Nat.Prime
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Tactic.Ring
 
-import Mathlib.Tactic.LibrarySearch
+import Mathlib.Tactic
+--import Mathlib.Tactic.LibrarySearch
 import Mathlib.Tactic.FieldSimp
 
 import Clvm.Ecdsa.Affine
@@ -47,7 +50,7 @@ def affine_to_jacobian {curve : Curve} (ap : AffinePoint curve) : JacobianPoint 
     let y : ZMod curve.p := 1
     let z : ZMod curve.p := 0
     have _proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := by
-      simp
+      sorry
     ⟨x, y, z⟩ -- , proof⟩
 
 

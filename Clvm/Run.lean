@@ -7,7 +7,7 @@ import Clvm.Util
 
 def OP_Q: UInt8 := 0x01
 def OP_A: UInt8 := 0x02
-/-
+
 def OP_I: UInt8 := 0x03
 def OP_C: UInt8 := 0x04
 def OP_F: UInt8 := 0x05
@@ -44,7 +44,7 @@ def OP_ANY: UInt8 := 0x21
 def OP_ALL: UInt8 := 0x22
 
 def OP_SOFTFORK: UInt8 := 0x24
--/
+
 
 def handle_unused (_args: Node) : Result Node :=
   Result.ok Node.nil
@@ -99,7 +99,7 @@ def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: N
   | Node.atom atom => some atom
   | _ => none
   let is_nil : Bool := match should_be_nil with
-  | Node.atom atom => (atom.size == 0)
+  | Node.atom atom => (atom.size = 0)
   | _ => false
   if ¬is_nil ∨ opcode_as_atom = none then
     Result.err program "in ((X)...) syntax X must be lone atom"
@@ -134,16 +134,16 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node :=
     | Node.pair opcode arguments => match opcode with
       | Node.pair inner_opcode should_be_nil => apply_cons_mode_syntax inner_opcode should_be_nil arguments program
       | Node.atom atom =>
-          if atom.size == 1 then
+          if atom.size = 1 then
             let byte := atom[0]!
-            if byte == OP_Q then
+            if byte = OP_Q then
               Result.ok arguments
             else
              let eval_args : NResult (List Node) := map_or_err (fun node => apply_node (depth-1) node args) (as_list arguments)
              match eval_args with
             | NResult.ok eval_args =>
                 let new_args := as_node eval_args
-                if byte == OP_A then
+                if byte = OP_A then
                     match new_args with
                     | Node.pair program (Node.pair args (Node.atom #[])) => apply_node (depth-1) program args
                     | _ => Result.err new_args "apply requires exactly 2 parameters"

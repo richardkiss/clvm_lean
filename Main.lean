@@ -1,3 +1,4 @@
+import Clvm.Coe
 import Clvm.Node
 import Clvm.Hex
 import Clvm.Result
