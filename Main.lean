@@ -9,7 +9,7 @@ import Clvm.Util
 
 def do_run (node : Node) : String :=
   match node with
-  | Node.atom a => s!"that's an atom: {a}"
+  | Node.atom a => s!"that's an atom: {a.data}"
   | Node.pair a b => match apply_node 100000 a b with
     | Result.ok n => n2h n
     | Result.err n e => s!"FAIL: {e} {n2h n}"

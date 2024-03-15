@@ -105,15 +105,15 @@ def points_for_x {curve : Curve} (x : ZMod curve.p) : (AffinePointNotInfinity cu
     (⟨x, y1⟩, ⟨x, y0⟩)
 
 
-def deserialize_point (bytes : Array UInt8) : Option (JacobianPoint CurveBLS12381) :=
-  if bytes.size = 48 then
+def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) :=
+  if bytes.length = 48 then
     if bytes[0]! = 0xc0 then
-      if bytes = #[0xc0] ++ (Array.mkArray 47 0) then
+      if bytes = 0xc0 :: (Array.mkArray 47 0).toList then
         some zero
       else
         none
     else
-      let new_x_bytes := bytes.modify 0 (fun b => b &&& 0b00011111)
+      let new_x_bytes : Atom := bytes.modify 0 (fun b => b &&& 0b00011111)
       let x0 := bytes[0]!
       let x : Nat := atom_to_nat new_x_bytes
       let x_mod : ZMod CurveBLS12381.p := x % CurveBLS12381.p

@@ -1,10 +1,10 @@
 import Clvm.Atom
 import Clvm.Casts
-import Clvm.Ecdsa.Basic
-import Clvm.Ecdsa.Bls12381
-import Clvm.Ecdsa.Jacobian
+--import Clvm.Ecdsa.Basic
+--import Clvm.Ecdsa.Bls12381
+--import Clvm.Ecdsa.Jacobian
 import Clvm.Serde
-import Clvm.Sha256
+--import Clvm.Sha256
 import Clvm.Result
 import Clvm.Util
 
@@ -62,13 +62,13 @@ def lxor (a : Array UInt8) (b : Int): Array UInt8 := logical_op a b (fun a b => 
 
 def handle_op_c (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) => Result.ok (Node.pair a0 a1)
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨[], _⟩)) => Result.ok (Node.pair a0 a1)
   | _ => Result.err args "c takes exactly 2 arguments"
 
 
 def handle_op_f (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨[], _⟩) =>
       match a0 with
       | Node.pair a0 _ => Result.ok a0
       | _ => Result.err a0 "first of non-cons"
@@ -77,7 +77,7 @@ def handle_op_f (args: Node) : Result Node Node :=
 
 def handle_op_r (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨[], _⟩) =>
       match a0 with
       | Node.pair _ a0 => Result.ok a0
       | _ => Result.err a0 "rest of non-cons"
@@ -87,39 +87,39 @@ def handle_op_r (args: Node) : Result Node Node :=
 
 def handle_op_i (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.pair a2 (Node.atom #[]))) =>
+  | Node.pair a0 (Node.pair a1 (Node.pair a2 (Node.atom ⟨[], _⟩))) =>
       match a0 with
-      | Node.atom #[] => Result.ok a2
+      | Node.atom ⟨[], _⟩  => Result.ok a2
       | _ => Result.ok a1
   | _ => Result.err args "i takes exactly 3 arguments"
 
 
 def handle_op_l (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨[], _⟩) =>
       match a0 with
-      | Node.atom _ => Result.ok (Node.atom #[])
-      | Node.pair _ _ => Result.ok (Node.atom #[1])
+      | Node.atom _ => Result.ok Node.nil
+      | Node.pair _ _ => Result.ok Node.one
   | _ => Result.err args "l takes exactly 1 argument"
 
 
 def handle_op_x (args: Node) : Result Node Node :=
   Result.err (
     match args with
-    | Node.pair (Node.atom msg) (Node.atom #[]) => (Node.atom msg)
+    | Node.pair (Node.atom msg) (Node.atom ⟨[], _⟩) => (Node.atom msg)
     | _ => args
   ) "clvm raise"
 
 
 def handle_op_eq (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨[], _⟩)) =>
     match a0, a1 with
     |  Node.atom v0, Node.atom v1 =>
-        if v0 == v1 then
-          Result.ok (Node.atom #[1])
+        if v0.data = v1.data then
+          Result.ok Node.one
         else
-          Result.ok (Node.atom #[])
+          Result.ok Node.nil
     | Node.pair _ _, _ => Result.err a0 "= on list"
     | Node.atom _, Node.pair _ _ => Result.err a1 "= on list"
   | _ => Result.err args "= takes exactly 2 arguments"
@@ -143,10 +143,10 @@ def compare_gr_s (depth: Nat) (v0: Array UInt8) (v1: Array UInt8) : Bool :=
 
 def handle_op_gt_s (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨[], _⟩)) =>
     match a0, a1 with
     |  Node.atom v0, Node.atom v1 =>
-        let depth: Nat := max v0.size v1.size
+        let depth: Nat := max v0.length v1.length
         Result.ok (if (compare_gr_s depth v0 v1) then Node.one else Node.nil)
     | Node.pair _ _, _ => Result.err a0 ">s on list"
     | _, _ => Result.err a1 ">s on list"
@@ -157,8 +157,8 @@ def handle_op_sha256 (args: Node) : Result Node Node :=
   match node_to_list args atom_only_cast with
   | Result.err a _ => Result.err a "sha256 on list"
   | Result.ok atoms =>
-    let msg : Array UInt8 := atoms.foldl (fun a b => a ++ b) #[]
-    Result.ok (Node.atom (sha256 msg))
+    let _msg : List Nat := atoms.foldl (fun a b => a ++ b) []
+    Result.ok Node.nil -- TODO (Node.atom (sha256 msg))
 
 
 def handle_op_substr (args: Node) : Result Node Node :=
@@ -166,8 +166,8 @@ def handle_op_substr (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 a2) =>
     match a2 with
-    | Node.atom #[] => Result.ok (a0, a1, none)
-    | Node.pair a2 (Node.atom #[]) => Result.ok (a0, a1, some a2)
+    | Node.atom ⟨ [], _⟩  => Result.ok (a0, a1, none)
+    | Node.pair a2 (Node.atom ⟨ [], _⟩) => Result.ok (a0, a1, some a2)
     | _ => Result.err args "substr takes exactly 2 or 3 arguments"
   | _ => Result.err args "substr takes exactly 2 or 3 arguments"
 
@@ -182,7 +182,7 @@ def handle_op_substr (args: Node) : Result Node Node :=
         | Result.err a b => Result.err a b
         | Result.ok i1 =>
           match maybe_end with
-            | none => Result.ok (s0, i1, s0.size)
+            | none => Result.ok (s0, i1, s0.length)
             | some x => match node_as_int32 "substr" x with
               | Result.err a b => Result.err a b
               | Result.ok i2 => Result.ok (s0, i1, i2)
@@ -197,9 +197,9 @@ def handle_op_substr (args: Node) : Result Node Node :=
 
 def handle_op_strlen (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨ [], _⟩) =>
     match a0 with
-    | Node.atom msg => Result.ok (Node.atom (int_to_atom msg.size))
+    | Node.atom msg => Result.ok (Node.atom (int_to_atom msg.length))
     | _ => Result.err a0 "strlen on list"
   | _ => Result.err args "strlen takes exactly 1 argument"
 
@@ -240,7 +240,7 @@ def handle_op_mul (args: Node) : Result Node Node :=
 
 def handle_op_div (args: Node) : Result Node Node :=
   match args with
-  | Node.pair n0 (Node.pair n1 (Node.atom #[])) =>
+  | Node.pair n0 (Node.pair n1 (Node.atom ⟨ [], _⟩)) =>
     match n0, n1 with
     | Node.atom a0, Node.atom a1 =>
       let v0 := atom_to_int a0
@@ -273,7 +273,7 @@ def divmod (a: Int) (b: Int) : (Int × Int) :=
 
 def handle_op_divmod (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨ [], _⟩)) =>
     match a0, a1 with
     | Node.atom v0, Node.atom v1 =>
       let v0 := atom_to_int v0
@@ -290,7 +290,7 @@ def handle_op_divmod (args: Node) : Result Node Node :=
 
 def handle_op_gt (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨ [], _⟩)) =>
     match a0, a1 with
     |  Node.atom v0, Node.atom v1 =>
         let v0 := atom_to_int v0
@@ -318,7 +318,7 @@ def shiftInt (v0: Int) (v1: Int) : Int :=
 
 def handle_op_ash (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨ [], _⟩)) =>
     match a0, a1 with
     | Node.atom v0, Node.atom v1 =>
       let v0 := atom_to_int v0
@@ -332,7 +332,7 @@ def handle_op_ash (args: Node) : Result Node Node :=
 
 def handle_op_lsh (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
+  | Node.pair a0 (Node.pair a1 (Node.atom ⟨ [], _⟩)) =>
     match a0, a1 with
     | Node.atom v0, Node.atom v1 =>
       let v0 := atom_to_nat v0
@@ -355,22 +355,22 @@ def handle_op_logior (args: Node) : Result Node Node :=
   match args_to_int args with
   | Result.err _ b => Result.err args b
   | Result.ok args =>
-      Result.ok (Node.atom (args.foldl (fun a b => lor a b) #[]))
+      Result.ok (Node.atom (args.foldl (fun a b => lor a b) ([]: List Nat)))
 
 
 def handle_op_logxor (args: Node) : Result Node Node :=
   match args_to_int args with
   | Result.err _ b => Result.err args b
   | Result.ok args =>
-      Result.ok (Node.atom (args.foldl (fun a b => lxor a b) #[]))
+      Result.ok (Node.atom (args.foldl (fun a b => lxor a b) ([]: List Nat)))
 
 
 def handle_op_lognot (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨ [], _⟩) =>
     match a0 with
     | Node.atom v0 =>
-      if v0.size = 0 then
+      if v0.length = 0 then
         Result.ok (Node.atom #[255])
       else
         let v1 : Array UInt8 := lxor v0 (-1)
@@ -390,7 +390,7 @@ def handle_op_point_add (args: Node) : Result Node Node :=
 
 def handle_op_pubkey_for_exp (args: Node) : Result Node Node :=
   let order := 0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001
-  if let Node.pair arg (Node.atom #[]) := args then
+  if let Node.pair arg (Node.atom ⟨ [], _⟩) := args then
     if let Node.atom a0 := arg then
       let i0 := atom_to_int a0
       let i1 : Int := i0 % order
@@ -405,10 +405,10 @@ def handle_op_pubkey_for_exp (args: Node) : Result Node Node :=
 
 def handle_op_not (args: Node) : Result Node Node :=
   match args with
-  | Node.pair a0 (Node.atom #[]) =>
+  | Node.pair a0 (Node.atom ⟨ [], _⟩) =>
     match a0 with
-    | Node.atom #[] => Result.ok (Node.atom #[1])
-    | _ => Result.ok (Node.atom #[])
+    | Node.atom ⟨ [], _⟩ => Result.ok Node.one
+    | _ => Result.ok Node.nil
   | _ => Result.err args "not takes exactly 1 argument"
 
 -- this take vararg arguments and returns true iff any argument is true

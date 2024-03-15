@@ -7,7 +7,7 @@ import Clvm.Ecdsa.Opcode
 
 def node_to_list_1 (args: Node) (cast: Node → Result α Node): Result (List α) Node :=
   match args with
-  | Node.atom #[] => Result.ok []
+  | Node.atom { data := [], lt := _ } => Result.ok []
   | Node.pair first rest => match cast first with
     | Result.err a b => Result.err a b
     | Result.ok v => match node_to_list_1 rest cast with
@@ -19,7 +19,7 @@ def node_to_list_1 (args: Node) (cast: Node → Result α Node): Result (List α
 
 def node_to_list_int (args: Node) (cast: Node → Result Int Node): Result (List Int) Node :=
   match args with
-  | Node.atom #[] => Result.ok []
+  | Node.atom { data := [], lt := _ } => Result.ok []
   | Node.pair first rest => match cast first with
     | Result.err a b => Result.err a b
     | Result.ok v => match node_to_list_1 rest cast with
@@ -28,9 +28,9 @@ def node_to_list_int (args: Node) (cast: Node → Result Int Node): Result (List
   | _ => Result.err args "unexpected terminator"
 
 
-def node_to_node_list_terminator (args: Node) : (List Node) × Atom :=
+def node_to_node_list_terminator (args: Node) : (List Node) × (List Nat) :=
   match args with
-  | Node.atom a => ⟨[], a⟩
+  | Node.atom a => ⟨[], a.data⟩
   | Node.pair first rest =>
     let ⟨ rest, terminator⟩ := node_to_node_list_terminator rest
     ⟨first :: rest, terminator⟩
@@ -39,7 +39,7 @@ def node_to_node_list_terminator (args: Node) : (List Node) × Atom :=
 def node_to_node_list (args: Node) : Result (List Node) Node :=
   let r := node_to_node_list_terminator args
   match r with
-  | (l, #[]) => Result.ok l
+  | (l, []) => Result.ok l
   | _ => Result.err args "unexpected terminator"
 
 
@@ -53,9 +53,9 @@ def list_result_to_result_list (args: List (Result α Node)): Result (List α) N
 
 
 def node_to_list (args: Node) (cast: Node → Result α Node): Result (List α) Node:=
-  let step1 : List Node × Atom := node_to_node_list_terminator args
+  let step1 : List Node × List Nat := node_to_node_list_terminator args
   -- need to prove that right node is nil
-  if step1.2.size > 0 then
+  if step1.2.length > 0 then
     Result.err args "unexpected terminator"
   else
     let step2 : List (Result α Node) := step1.1.map cast
@@ -81,7 +81,7 @@ def atom_to_nat_cast (node: Node) : Result Nat Node := only_atoms node atom_to_n
 
 def node_to_bool (node: Node) : Result Bool Node :=
   match node with
-  | Node.atom atom => Result.ok (atom.size != 0)
+  | Node.atom atom => Result.ok (atom.length != 0)
   | _ => Result.ok true
 
 
@@ -149,7 +149,7 @@ def atom_to_shift_int (op: String) (atom: Array UInt8) : Result Int Node :=
 def node_as_int32 (op_name: String) (node: Node) : Result Int Node :=
   match node with
   | Node.atom a =>
-        if a.size > 4 then
+        if a.length > 4 then
           Result.err node (op_name ++ " requires int32 args (with no leading zeros)")
         else
           Result.ok (atom_to_int a)

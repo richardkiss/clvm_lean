@@ -74,7 +74,7 @@ def as_list (node: Node) : List Node :=
 def as_node (nodes: List Node) : Node :=
   let rec inner_func (nodes: List Node) : Node :=
     match nodes with
-    | [] => Node.atom #[]
+    | [] => Node.nil
     | a::b => Node.pair a (inner_func b)
   inner_func nodes
 
@@ -87,29 +87,30 @@ def node_map (f: Node -> Node): Node -> Node :=
   inner_func
 
 
-def handle_opcode (byte: UInt8) (args: Node) : Result Node Node :=
-  let f:= match OP_ARRAY[byte.toNat]? with
+def handle_opcode (byte: Nat) (args: Node) : Result Node Node :=
+  let f:= match OP_ARRAY[byte]? with
   | some f => f
   | none => handle_unused
   f args
 
 
 def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Result Node Node :=
+  Result.err program "in ((X)...) syntax X must be lone atom"
+    /-
   let opcode_as_atom := match opcode with
   | Node.atom atom => some atom
   | _ => none
   let is_nil : Bool := match should_be_nil with
-  | Node.atom atom => (atom.size = 0)
+  | Node.atom atom => (atom.length = 0)
   | _ => false
   if ¬is_nil ∨ opcode_as_atom = none then
     Result.err program "in ((X)...) syntax X must be lone atom"
   else
     let opcode_as_byte := match opcode_as_atom with
-    | some atom => match atom[0]? with
-      | some byte => byte
-      | none => 0
+    | some atom => atom.data.head
     | none => 0
     handle_opcode opcode_as_byte operand_list
+    -/
 
 def map_or_err (f: Node -> Result Node Node) (arr: List Node) : (Result (List Node) Node) :=
   match arr with
@@ -134,8 +135,8 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
     | Node.pair opcode arguments => match opcode with
       | Node.pair inner_opcode should_be_nil => apply_cons_mode_syntax inner_opcode should_be_nil arguments program
       | Node.atom atom =>
-          if atom.size = 1 then
-            let byte := atom[0]!
+          if atom.length = 1 then
+            let byte := atom.data[0]!
             if byte = OP_Q then
               Result.ok arguments
             else
@@ -145,7 +146,7 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
                 let new_args := as_node eval_args
                 if byte = OP_A then
                     match new_args with
-                    | Node.pair program (Node.pair args (Node.atom #[])) => apply_node (depth-1) program args
+                    | Node.pair program (Node.pair args (Node.atom ⟨ [], _ ⟩ )) => apply_node (depth-1) program args
                     | _ => Result.err new_args "apply requires exactly 2 parameters"
                 else
                   handle_opcode byte new_args
@@ -164,16 +165,16 @@ def apply (program: Node) (args: Node) : Result Node Node :=
   apply_node 100 program args
 
 #check apply my_quote my_quote
-#eval show_result (apply my_quote my_quote)
+-- #eval show_result (apply my_quote my_quote)
 
-#eval atom_to_int #[]
-#eval atom_to_int #[0]
-#eval atom_to_int #[127]
-#eval atom_to_nat #[128]
-#eval atom_to_int #[128]
-#eval atom_to_int #[255]
-#eval atom_to_int #[128, 0]
-#eval atom_to_int #[127, 255]
+#eval atom_to_int ([]: List Nat)
+#eval atom_to_int [0]
+#eval atom_to_int [127]
+#eval atom_to_nat [128]
+#eval atom_to_int [128]
+#eval atom_to_int [255]
+#eval atom_to_int [128, 0]
+#eval atom_to_int [127, 255]
 
 
 def rh (hex: String) : String := show_result (apply (h2n hex) (h2n "00"))
