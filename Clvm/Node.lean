@@ -14,7 +14,7 @@ inductive Node
 def Node.nil := Node.atom #[]
 def Node.one := Node.atom #[1]
 
-def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node :=
+def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node Node :=
   if depth = 0 then
     Result.err node "depth is 0"
   else if p < 2 then
@@ -29,7 +29,7 @@ def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node :=
 
 
 
-def node_at (p: Nat) (node: Node): Result Node := node_at_wdepth (p+1) p node
+def node_at (p: Nat) (node: Node): Result Node Node := node_at_wdepth (p+1) p node
 
 
 

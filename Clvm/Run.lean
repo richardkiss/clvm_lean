@@ -46,12 +46,12 @@ def OP_ALL: UInt8 := 0x22
 def OP_SOFTFORK: UInt8 := 0x24
 
 
-def handle_unused (_args: Node) : Result Node :=
+def handle_unused (_args: Node) : Result Node Node :=
   Result.ok Node.nil
 
 
 
-def OP_ARRAY: Array (Node → Result Node) := #[
+def OP_ARRAY: Array (Node → Result Node Node) := #[
   handle_unused, handle_unused, handle_unused, handle_op_i, -- 0 to 3
   handle_op_c, handle_op_f, handle_op_r, handle_op_l, -- 4 to 7
   handle_op_x, handle_op_eq, handle_op_gt_s, handle_op_sha256, -- 8 to 0x0b
@@ -87,14 +87,14 @@ def node_map (f: Node -> Node): Node -> Node :=
   inner_func
 
 
-def handle_opcode (byte: UInt8) (args: Node) : Result Node :=
+def handle_opcode (byte: UInt8) (args: Node) : Result Node Node :=
   let f:= match OP_ARRAY[byte.toNat]? with
   | some f => f
   | none => handle_unused
   f args
 
 
-def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Result Node :=
+def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Result Node Node :=
   let opcode_as_atom := match opcode with
   | Node.atom atom => some atom
   | _ => none
@@ -111,21 +111,21 @@ def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: N
     | none => 0
     handle_opcode opcode_as_byte operand_list
 
-def map_or_err (f: Node -> Result Node) (arr: List Node) : (NResult (List Node)) :=
+def map_or_err (f: Node -> Result Node Node) (arr: List Node) : (Result (List Node) Node) :=
   match arr with
-  | [] => NResult.ok []
+  | [] => Result.ok []
   | a::b => match f a with
     | Result.ok node =>
       match map_or_err f b with
-      | NResult.ok nodes => NResult.ok (node::nodes)
+      | Result.ok nodes => Result.ok (node::nodes)
       | _other => _other
-    | Result.err a msg => NResult.err a msg
+    | Result.err a msg => Result.err a msg
 
 
 #eval node_at (atom_to_nat #[0x00, 0x02]) (h2n "ff7701")
 
 
-def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node :=
+def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
   if depth = 0 then
     Result.err program "depth 0"
   else
@@ -139,9 +139,9 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node :=
             if byte = OP_Q then
               Result.ok arguments
             else
-             let eval_args : NResult (List Node) := map_or_err (fun node => apply_node (depth-1) node args) (as_list arguments)
+             let eval_args : Result (List Node) Node := map_or_err (fun node => apply_node (depth-1) node args) (as_list arguments)
              match eval_args with
-            | NResult.ok eval_args =>
+            | Result.ok eval_args =>
                 let new_args := as_node eval_args
                 if byte = OP_A then
                     match new_args with
@@ -149,7 +149,7 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node :=
                     | _ => Result.err new_args "apply requires exactly 2 parameters"
                 else
                   handle_opcode byte new_args
-            | NResult.err arg msg => Result.err arg msg
+            | Result.err arg msg => Result.err arg msg
           else
             Result.err (Node.atom atom) "invalid operator"
 
@@ -160,7 +160,7 @@ def my_quote: Node := Node.pair (Node.atom #[0x01]) (Node.atom #[2, 3, 4])
 #check my_quote
 #eval n2h my_quote
 
-def apply (program: Node) (args: Node) : Result Node :=
+def apply (program: Node) (args: Node) : Result Node Node :=
   apply_node 100 program args
 
 #check apply my_quote my_quote

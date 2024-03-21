@@ -2,7 +2,7 @@ import Clvm.Result
 import Clvm.Serde
 
 
-def show_result (result: Result Node) : String :=
+def show_result (result: Result Node Node) : String :=
   match result with
   | Result.ok node => "ok: " ++ n2h node
   | Result.err node msg => "err: " ++ msg ++ " " ++ n2h node

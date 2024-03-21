@@ -60,13 +60,13 @@ def lxor (a : Array UInt8) (b : Int): Array UInt8 := logical_op a b (fun a b => 
 
 
 
-def handle_op_c (args: Node) : Result Node :=
+def handle_op_c (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) => Result.ok (Node.pair a0 a1)
   | _ => Result.err args "c takes exactly 2 arguments"
 
 
-def handle_op_f (args: Node) : Result Node :=
+def handle_op_f (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
       match a0 with
@@ -75,7 +75,7 @@ def handle_op_f (args: Node) : Result Node :=
   | _ => Result.err args "f takes exactly 1 argument"
 
 
-def handle_op_r (args: Node) : Result Node :=
+def handle_op_r (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
       match a0 with
@@ -85,7 +85,7 @@ def handle_op_r (args: Node) : Result Node :=
 
 
 
-def handle_op_i (args: Node) : Result Node :=
+def handle_op_i (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.pair a2 (Node.atom #[]))) =>
       match a0 with
@@ -94,7 +94,7 @@ def handle_op_i (args: Node) : Result Node :=
   | _ => Result.err args "i takes exactly 3 arguments"
 
 
-def handle_op_l (args: Node) : Result Node :=
+def handle_op_l (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
       match a0 with
@@ -103,7 +103,7 @@ def handle_op_l (args: Node) : Result Node :=
   | _ => Result.err args "l takes exactly 1 argument"
 
 
-def handle_op_x (args: Node) : Result Node :=
+def handle_op_x (args: Node) : Result Node Node :=
   Result.err (
     match args with
     | Node.pair (Node.atom msg) (Node.atom #[]) => (Node.atom msg)
@@ -111,7 +111,7 @@ def handle_op_x (args: Node) : Result Node :=
   ) "clvm raise"
 
 
-def handle_op_eq (args: Node) : Result Node :=
+def handle_op_eq (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -141,7 +141,7 @@ def compare_gr_s (depth: Nat) (v0: Array UInt8) (v1: Array UInt8) : Bool :=
       else compare_gr_s (depth - 1) (v0.extract 1 v0.size) (v1.extract 1 v1.size)
 
 
-def handle_op_gt_s (args: Node) : Result Node :=
+def handle_op_gt_s (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -153,49 +153,49 @@ def handle_op_gt_s (args: Node) : Result Node :=
   | _ => Result.err args ">s takes exactly 2 arguments"
 
 
-def handle_op_sha256 (args: Node) : Result Node :=
+def handle_op_sha256 (args: Node) : Result Node Node :=
   match node_to_list args atom_only_cast with
-  | NResult.err a _ => Result.err a "sha256 on list"
-  | NResult.ok atoms =>
+  | Result.err a _ => Result.err a "sha256 on list"
+  | Result.ok atoms =>
     let msg : Array UInt8 := atoms.foldl (fun a b => a ++ b) #[]
     Result.ok (Node.atom (sha256 msg))
 
 
-def handle_op_substr (args: Node) : Result Node :=
-  let three_args : NResult (Node × Node × Option Node) :=
+def handle_op_substr (args: Node) : Result Node Node :=
+  let three_args : Result (Node × Node × Option Node) Node :=
   match args with
   | Node.pair a0 (Node.pair a1 a2) =>
     match a2 with
-    | Node.atom #[] => NResult.ok (a0, a1, none)
-    | Node.pair a2 (Node.atom #[]) => NResult.ok (a0, a1, some a2)
-    | _ => NResult.err args "substr takes exactly 2 or 3 arguments"
-  | _ => NResult.err args "substr takes exactly 2 or 3 arguments"
+    | Node.atom #[] => Result.ok (a0, a1, none)
+    | Node.pair a2 (Node.atom #[]) => Result.ok (a0, a1, some a2)
+    | _ => Result.err args "substr takes exactly 2 or 3 arguments"
+  | _ => Result.err args "substr takes exactly 2 or 3 arguments"
 
-  let three_args : NResult ((Array UInt8) × Int × Int) :=
+  let three_args : Result ((Array UInt8) × Int × Int) Node :=
     match three_args with
-    | NResult.err a b => NResult.err a b
-    | NResult.ok (string_node, start_node, maybe_end) =>
+    | Result.err a b => Result.err a b
+    | Result.ok (string_node, start_node, maybe_end) =>
       match string_node with
-      | Node.pair _ _ => NResult.err string_node "substr on list"
+      | Node.pair _ _ => Result.err string_node "substr on list"
       | Node.atom s0 =>
         match node_as_int32 "substr" start_node with
-        | NResult.err a b => NResult.err a b
-        | NResult.ok i1 =>
+        | Result.err a b => Result.err a b
+        | Result.ok i1 =>
           match maybe_end with
-            | none => NResult.ok (s0, i1, s0.size)
+            | none => Result.ok (s0, i1, s0.size)
             | some x => match node_as_int32 "substr" x with
-              | NResult.err a b => NResult.err a b
-              | NResult.ok i2 => NResult.ok (s0, i1, i2)
+              | Result.err a b => Result.err a b
+              | Result.ok i2 => Result.ok (s0, i1, i2)
   match three_args with
-  | NResult.err a b => Result.err a b
-  | NResult.ok (s0, i1, i2) =>
+  | Result.err a b => Result.err a b
+  | Result.ok (s0, i1, i2) =>
       if i2 > s0.size ∨ i2 < i1 ∨ i2 < 0 ∨ i1 < 0 then
         Result.err args "invalid indices for substr"
       else
         Result.ok (Node.atom (s0.extract i1.toNat i2.toNat))
 
 
-def handle_op_strlen (args: Node) : Result Node :=
+def handle_op_strlen (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
     match a0 with
@@ -204,26 +204,26 @@ def handle_op_strlen (args: Node) : Result Node :=
   | _ => Result.err args "strlen takes exactly 1 argument"
 
 
-def handle_op_concat (args: Node) : Result Node :=
+def handle_op_concat (args: Node) : Result Node Node :=
   match node_to_list args atom_only_cast with
-  | NResult.err a _ => Result.err a "concat on list"
-  | NResult.ok args =>
+  | Result.err a _ => Result.err a "concat on list"
+  | Result.ok args =>
       let total : Array UInt8 := args.foldl (fun a b => a ++ b) #[]
       Result.ok (Node.atom total)
 
 
-def handle_op_add (args: Node) : Result Node :=
+def handle_op_add (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
     let total : Int := args.foldl (fun a b => a + b) 0
     Result.ok (Node.atom (int_to_atom total))
 
 
-def handle_op_sub (args: Node) : Result Node :=
+def handle_op_sub (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
     match args with
     | first :: rest =>
       let total : Int := rest.foldl (fun a b => a - b) first
@@ -231,14 +231,14 @@ def handle_op_sub (args: Node) : Result Node :=
     | _ => Result.ok Node.nil
 
 
-def handle_op_mul (args: Node) : Result Node :=
+def handle_op_mul (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
     let total : Int := args.foldl (fun a b => a * b) 1
     Result.ok (Node.atom (int_to_atom total))
 
-def handle_op_div (args: Node) : Result Node :=
+def handle_op_div (args: Node) : Result Node Node :=
   match args with
   | Node.pair n0 (Node.pair n1 (Node.atom #[])) =>
     match n0, n1 with
@@ -271,7 +271,7 @@ def divmod (a: Int) (b: Int) : (Int × Int) :=
   (if a_neg = b_neg then q else -q, if b_neg then -r else r)
 
 
-def handle_op_divmod (args: Node) : Result Node :=
+def handle_op_divmod (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -288,7 +288,7 @@ def handle_op_divmod (args: Node) : Result Node :=
   | _ => Result.err args "divmod takes exactly 2 arguments"
 
 
-def handle_op_gt (args: Node) : Result Node :=
+def handle_op_gt (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -316,7 +316,7 @@ def shiftInt (v0: Int) (v1: Int) : Int :=
   else
     shifted
 
-def handle_op_ash (args: Node) : Result Node :=
+def handle_op_ash (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -324,13 +324,13 @@ def handle_op_ash (args: Node) : Result Node :=
       let v0 := atom_to_int v0
       let v1 := atom_to_shift_int "ash" v1
       match v1 with
-      | NResult.err a b => Result.err a b
-      | NResult.ok v1 => Result.ok (Node.atom (int_to_atom (shiftInt v0 v1)))
+      | Result.err a b => Result.err a b
+      | Result.ok v1 => Result.ok (Node.atom (int_to_atom (shiftInt v0 v1)))
     | Node.pair _ _, Node.atom _ => Result.err a0 "ash requires int args"
     | _, Node.pair _ _ => Result.err a1 "ash requires int args"
   | _ => Result.err args "ash takes exactly 2 arguments"
 
-def handle_op_lsh (args: Node) : Result Node :=
+def handle_op_lsh (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.pair a1 (Node.atom #[])) =>
     match a0, a1 with
@@ -338,34 +338,34 @@ def handle_op_lsh (args: Node) : Result Node :=
       let v0 := atom_to_nat v0
       let v1 := atom_to_shift_int "lsh" v1
       match v1 with
-      | NResult.err a b => Result.err a b
-      | NResult.ok v1 => Result.ok (Node.atom (int_to_atom (shiftNat v0 v1)))
+      | Result.err a b => Result.err a b
+      | Result.ok v1 => Result.ok (Node.atom (int_to_atom (shiftNat v0 v1)))
     | Node.pair _ _, _ => Result.err a0 "lsh requires int args"
     | _, _ => Result.err a1 "lsh requires int args"
   | _ => Result.err args "lsh takes exactly 2 arguments"
 
-def handle_op_logand (args: Node) : Result Node :=
+def handle_op_logand (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
       Result.ok (Node.atom (args.foldl (fun a b => land a b) #[255]))
 
 
-def handle_op_logior (args: Node) : Result Node :=
+def handle_op_logior (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
       Result.ok (Node.atom (args.foldl (fun a b => lor a b) #[]))
 
 
-def handle_op_logxor (args: Node) : Result Node :=
+def handle_op_logxor (args: Node) : Result Node Node :=
   match args_to_int args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok args =>
+  | Result.err _ b => Result.err args b
+  | Result.ok args =>
       Result.ok (Node.atom (args.foldl (fun a b => lxor a b) #[]))
 
 
-def handle_op_lognot (args: Node) : Result Node :=
+def handle_op_lognot (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
     match a0 with
@@ -379,16 +379,16 @@ def handle_op_lognot (args: Node) : Result Node :=
   | _ => Result.err args "lognot takes exactly 1 argument"
 
 
-def handle_op_point_add (args: Node) : Result Node :=
+def handle_op_point_add (args: Node) : Result Node Node :=
   match args_to_bls_points args with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok points =>
+  | Result.err _ b => Result.err args b
+  | Result.ok points =>
     let initial : JacobianPoint CurveBLS12381 := zero
     let total : JacobianPoint CurveBLS12381 := points.foldl add_jacobian initial
     Result.ok (Node.atom (serialize_point total))
 
 
-def handle_op_pubkey_for_exp (args: Node) : Result Node :=
+def handle_op_pubkey_for_exp (args: Node) : Result Node Node :=
   let order := 0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001
   if let Node.pair arg (Node.atom #[]) := args then
     if let Node.atom a0 := arg then
@@ -403,7 +403,7 @@ def handle_op_pubkey_for_exp (args: Node) : Result Node :=
     Result.err args "pubkey_for_exp takes exactly 1 argument"
 
 
-def handle_op_not (args: Node) : Result Node :=
+def handle_op_not (args: Node) : Result Node Node :=
   match args with
   | Node.pair a0 (Node.atom #[]) =>
     match a0 with
@@ -412,20 +412,20 @@ def handle_op_not (args: Node) : Result Node :=
   | _ => Result.err args "not takes exactly 1 argument"
 
 -- this take vararg arguments and returns true iff any argument is true
-def handle_op_any (args: Node) : Result Node :=
+def handle_op_any (args: Node) : Result Node Node :=
   let v := args_to_bool args
   match v with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok v =>
+  | Result.err _ b => Result.err args b
+  | Result.ok v =>
     let r := v.foldl (fun a b => a || b) false
     Result.ok (if r then Node.one else Node.nil)
 
 
 -- this take vararg arguments and returns true iff all arguments are true
-def handle_op_all (args: Node) : Result Node :=
+def handle_op_all (args: Node) : Result Node Node :=
   let v := args_to_bool args
   match v with
-  | NResult.err _ b => Result.err args b
-  | NResult.ok v =>
+  | Result.err _ b => Result.err args b
+  | Result.ok v =>
     let r := v.foldl (fun a b => a && b) true
     Result.ok (if r then Node.one else Node.nil)

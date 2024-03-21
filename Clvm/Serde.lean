@@ -109,7 +109,7 @@ def bytes_to_atom (bytes: Array UInt8) : Option DResult :=
 
 
 
-def bytes_to_node_inner (heartbeat_count: Nat) (bytes: Array UInt8) : Result DResult :=
+def bytes_to_node_inner (heartbeat_count: Nat) (bytes: Array UInt8) : Result DResult DResult :=
   if heartbeat_count = 0 then
     Result.err (DResult.mk bytes (Node.atom #[])) "heartbeat_count is 0"
   else

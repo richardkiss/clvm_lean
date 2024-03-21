@@ -3,39 +3,29 @@ import Clvm.Ecdsa.Basic
 import Clvm.Ecdsa.Bls12381
 import Clvm.Ecdsa.Opcode
 
-inductive NResult (α: Type) : Type
-| ok : α → NResult α
-| err : Node → String → NResult α
-deriving Repr
 
 
-def NResult.is_ok {α: Type} (r: NResult α) : Bool :=
-  match r with
-  | NResult.ok _ => True
-  | NResult.err _ _ => False
-
-
-def node_to_list_1 (args: Node) (cast: Node → NResult α): NResult (List α) :=
+def node_to_list_1 (args: Node) (cast: Node → Result α Node): Result (List α) Node :=
   match args with
-  | Node.atom #[] => NResult.ok []
+  | Node.atom #[] => Result.ok []
   | Node.pair first rest => match cast first with
-    | NResult.err a b => NResult.err a b
-    | NResult.ok v => match node_to_list_1 rest cast with
-      | NResult.err a b => NResult.err a b
-      | NResult.ok rest => NResult.ok (v :: rest)
-  | _ => NResult.err args "unexpected terminator"
+    | Result.err a b => Result.err a b
+    | Result.ok v => match node_to_list_1 rest cast with
+      | Result.err a b => Result.err a b
+      | Result.ok rest => Result.ok (v :: rest)
+  | _ => Result.err args "unexpected terminator"
 
 
 
-def node_to_list_int (args: Node) (cast: Node → NResult Int): NResult (List Int) :=
+def node_to_list_int (args: Node) (cast: Node → Result Int Node): Result (List Int) Node :=
   match args with
-  | Node.atom #[] => NResult.ok []
+  | Node.atom #[] => Result.ok []
   | Node.pair first rest => match cast first with
-    | NResult.err a b => NResult.err a b
-    | NResult.ok v => match node_to_list_1 rest cast with
-      | NResult.err a b => NResult.err a b
-      | NResult.ok rest => NResult.ok (v :: rest)
-  | _ => NResult.err args "unexpected terminator"
+    | Result.err a b => Result.err a b
+    | Result.ok v => match node_to_list_1 rest cast with
+      | Result.err a b => Result.err a b
+      | Result.ok rest => Result.ok (v :: rest)
+  | _ => Result.err args "unexpected terminator"
 
 
 def node_to_node_list_terminator (args: Node) : (List Node) × Atom :=
@@ -46,121 +36,121 @@ def node_to_node_list_terminator (args: Node) : (List Node) × Atom :=
     ⟨first :: rest, terminator⟩
 
 
-def node_to_node_list (args: Node) : NResult (List Node) :=
+def node_to_node_list (args: Node) : Result (List Node) Node :=
   let r := node_to_node_list_terminator args
   match r with
-  | (l, #[]) => NResult.ok l
-  | _ => NResult.err args "unexpected terminator"
+  | (l, #[]) => Result.ok l
+  | _ => Result.err args "unexpected terminator"
 
 
-def list_nresult_to_nresult_list (args: List (NResult α)): NResult (List α) :=
+def list_result_to_result_list (args: List (Result α Node)): Result (List α) Node :=
   match args with
-  | [] => NResult.ok []
-  | (NResult.err obj msg) :: _ => NResult.err obj msg
-  | (NResult.ok v) :: rest => match list_nresult_to_nresult_list rest with
-    | NResult.err obj msg => NResult.err obj msg
-    | NResult.ok rest => NResult.ok (v :: rest)
+  | [] => Result.ok []
+  | (Result.err obj msg) :: _ => Result.err obj msg
+  | (Result.ok v) :: rest => match list_result_to_result_list rest with
+    | Result.err obj msg => Result.err obj msg
+    | Result.ok rest => Result.ok (v :: rest)
 
 
-def node_to_list (args: Node) (cast: Node → NResult α): NResult (List α) :=
+def node_to_list (args: Node) (cast: Node → Result α Node): Result (List α) Node:=
   let step1 : List Node × Atom := node_to_node_list_terminator args
   -- need to prove that right node is nil
   if step1.2.size > 0 then
-    NResult.err args "unexpected terminator"
+    Result.err args "unexpected terminator"
   else
-    let step2 : List (NResult α) := step1.1.map cast
+    let step2 : List (Result α Node) := step1.1.map cast
     -- need to prove that all casts "succeed"
-    let step3 : NResult (List α) := list_nresult_to_nresult_list step2
+    let step3 : Result (List α) Node := list_result_to_result_list step2
     match step3 with
-    | NResult.err a b => NResult.err a b
-    | NResult.ok l => NResult.ok l
+    | Result.err a b => Result.err a b
+    | Result.ok l => Result.ok l
 
 
 
-def only_atoms (node: Node) (cast : (Array UInt8) → α) : NResult α :=
+def only_atoms (node: Node) (cast : Atom → α) : Result α Node :=
   match node with
-  | Node.atom atom => NResult.ok (cast atom)
-  | _ => NResult.err node "expected atom"
+  | Node.atom atom => Result.ok (cast atom)
+  | _ => Result.err node "expected atom"
 
 
-def atom_to_int_cast (node: Node) : NResult Int := only_atoms node atom_to_int
+def atom_to_int_cast (node: Node) : Result Int Node := only_atoms node atom_to_int
 
 
-def atom_to_nat_cast (node: Node) : NResult Nat := only_atoms node atom_to_nat
+def atom_to_nat_cast (node: Node) : Result Nat Node := only_atoms node atom_to_nat
 
 
-def node_to_bool (node: Node) : NResult Bool :=
+def node_to_bool (node: Node) : Result Bool Node :=
   match node with
-  | Node.atom atom => NResult.ok (atom.size != 0)
-  | _ => NResult.ok true
+  | Node.atom atom => Result.ok (atom.size != 0)
+  | _ => Result.ok true
 
 
-def args_to_int (args: Node) : NResult (List Int) :=
+def args_to_int (args: Node) : Result (List Int) Node :=
   node_to_list args atom_to_int_cast
 
 
-def args_to_nat (args: Node) : NResult (List Nat) :=
+def args_to_nat (args: Node) : Result (List Nat) Node :=
   node_to_list args atom_to_nat_cast
 
 
-def args_to_bool (args: Node) : NResult (List Bool) :=
+def args_to_bool (args: Node) : Result (List Bool) Node :=
   node_to_list args node_to_bool
 
 
-def node_to_bls_point (node: Node) : NResult (JacobianPoint CurveBLS12381) :=
+def node_to_bls_point (node: Node) : Result (JacobianPoint CurveBLS12381) Node :=
   match node with
   | Node.atom a => match deserialize_point a with
-    | none => NResult.err node "point_add on list"
-    | some p => NResult.ok p
-  | _ => NResult.err node "point_add expects blob, got xx"
+    | none => Result.err node "point_add on list"
+    | some p => Result.ok p
+  | _ => Result.err node "point_add expects blob, got xx"
 
 
-def args_to_bls_points (args: Node) : NResult (List (JacobianPoint CurveBLS12381)) :=
+def args_to_bls_points (args: Node) : Result (List (JacobianPoint CurveBLS12381)) Node :=
   node_to_list args node_to_bls_point
 
 
-def atom_only_cast (n: Node) : NResult (Array UInt8) :=
+def atom_only_cast (n: Node) : Result (Array UInt8) Node :=
   match n with
-  | Node.atom a => NResult.ok a
-  | _ => NResult.err n "expected atom"
+  | Node.atom a => Result.ok a
+  | _ => Result.err n "expected atom"
 
 
-def nat_to_uint32 (n: Nat) : NResult UInt32 :=
-  if (UInt32.ofNat n).toNat = n then NResult.ok (UInt32.ofNat n)
-  else NResult.err (Node.atom #[]) "expected 4 bytes"
+def nat_to_uint32 (n: Nat) : Result UInt32 Node :=
+  if (UInt32.ofNat n).toNat = n then Result.ok (UInt32.ofNat n)
+  else Result.err Node.nil "expected 4 bytes"
 
 
 
-def node_to_u32 (n: Node) : NResult UInt32 :=
+def node_to_u32 (n: Node) : Result UInt32 Node :=
   match atom_only_cast n with
-  | NResult.ok a => match nat_to_uint32 (atom_to_nat a) with
-    | NResult.ok v => NResult.ok v
-    | NResult.err a b => NResult.err a b
-  | NResult.err a b => NResult.err a b
+  | Result.ok a => match nat_to_uint32 (atom_to_nat a) with
+    | Result.ok v => Result.ok v
+    | Result.err a b => Result.err a b
+  | Result.err a b => Result.err a b
 
 
-def atom_to_u32 (atom: Array UInt8) : NResult UInt32 :=
+def atom_to_u32 (atom: Array UInt8) : Result UInt32 Node :=
   match nat_to_uint32 (atom_to_nat atom) with
-  | NResult.ok v => NResult.ok v
-  | NResult.err a b => NResult.err a b
+  | Result.ok v => Result.ok v
+  | Result.err a b => Result.err a b
 
 
-def atom_to_shift_int (op: String) (atom: Array UInt8) : NResult Int :=
+def atom_to_shift_int (op: String) (atom: Array UInt8) : Result Int Node :=
   if atom.size > 4 then
-    NResult.err (Node.atom atom) (op ++ " requires int32 args (with no leading zeros)")
+    Result.err (Node.atom atom) (op ++ " requires int32 args (with no leading zeros)")
   else
     let as_int := atom_to_int atom
     if as_int.natAbs > 65535 then
-      NResult.err (Node.atom atom) "shift too large"
+      Result.err (Node.atom atom) "shift too large"
     else
-      NResult.ok as_int
+      Result.ok as_int
 
 
-def node_as_int32 (op_name: String) (node: Node) : NResult Int :=
+def node_as_int32 (op_name: String) (node: Node) : Result Int Node :=
   match node with
   | Node.atom a =>
         if a.size > 4 then
-          NResult.err node (op_name ++ " requires int32 args (with no leading zeros)")
+          Result.err node (op_name ++ " requires int32 args (with no leading zeros)")
         else
-          NResult.ok (atom_to_int a)
-  | _ => NResult.err node (op_name ++ " requires int32 args")
+          Result.ok (atom_to_int a)
+  | _ => Result.err node (op_name ++ " requires int32 args")
