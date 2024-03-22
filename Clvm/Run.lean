@@ -65,12 +65,6 @@ def OP_ARRAY: Array (Node → Result Node Node) := #[
 
 
 
-def as_list (node: Node) : List Node :=
-  match node with
-  | Node.atom _ => []
-  | Node.pair a b => a::(as_list b)
-
-
 def as_node (nodes: List Node) : Node :=
   let rec inner_func (nodes: List Node) : Node :=
     match nodes with
@@ -103,13 +97,13 @@ def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: N
   | _, _ => Result.err program "in ((X)...) syntax X must be lone atom"
 
 
-def map_or_err (f: Node -> Result Node Node) (arr: List Node) : (Result (List Node) Node) :=
-  match arr with
-  | [] => Result.ok []
-  | a::b => match f a with
-    | Result.ok node =>
-      match map_or_err f b with
-      | Result.ok nodes => Result.ok (node::nodes)
+def map_or_err (f: Node -> Result Node Node) (args: Node) : (Result Node Node) :=
+  match args with
+  | Node.atom ⟨ _, _ ⟩  => Result.ok Node.nil
+  | Node.pair n1 n2 => match map_or_err f n2 with
+    | Result.ok r2 =>
+      match f n1 with
+      | Result.ok r1 => Result.ok (Node.pair r1 r2)
       | _other => _other
     | Result.err a msg => Result.err a msg
 
@@ -131,16 +125,15 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
             if byte = OP_Q then
               Result.ok arguments
             else
-             let eval_args : Result (List Node) Node := map_or_err (fun node => apply_node (depth-1) node args) (as_list arguments)
+             let eval_args : Result Node Node := map_or_err (fun node => apply_node (depth-1) node args) arguments
              match eval_args with
             | Result.ok eval_args =>
-                let new_args := as_node eval_args
                 if byte = OP_A then
-                    match new_args with
+                    match eval_args with
                     | Node.pair program (Node.pair args (Node.atom ⟨ [], _ ⟩ )) => apply_node (depth-1) program args
-                    | _ => Result.err new_args "apply requires exactly 2 parameters"
+                    | _ => Result.err eval_args "apply requires exactly 2 parameters"
                 else
-                  handle_opcode byte new_args
+                  handle_opcode byte eval_args
             | Result.err arg msg => Result.err arg msg
           else
             Result.err (Node.atom atom) "invalid operator"
