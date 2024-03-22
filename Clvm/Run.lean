@@ -82,9 +82,37 @@ def node_map (f: Node -> Node): Node -> Node :=
 
 
 def handle_opcode (byte: Nat) (args: Node) : Result Node Node :=
-  let f:= match OP_ARRAY[byte]? with
-  | some f => f
-  | none => handle_unused
+  let f:= match byte with
+  | 0x03 => handle_op_i
+  | 0x04 => handle_op_c
+  | 0x05 => handle_op_f
+  | 0x06 => handle_op_r
+  | 0x07 => handle_op_l
+  | 0x08 => handle_op_x
+  | 0x09 => handle_op_eq
+  | 0x0a => handle_op_gt_s
+  | 0x0b => handle_op_sha256
+  | 0x0c => handle_op_substr
+  | 0x0d => handle_op_strlen
+  | 0x0e => handle_op_concat
+  | 0x10 => handle_op_add
+  | 0x11 => handle_op_sub
+  | 0x12 => handle_op_mul
+  | 0x13 => handle_op_div
+  | 0x14 => handle_op_divmod
+  | 0x15 => handle_op_gt
+  | 0x16 => handle_op_ash
+  | 0x17 => handle_op_lsh
+  | 0x18 => handle_op_logand
+  | 0x19 => handle_op_logior
+  | 0x1a => handle_op_logxor
+  | 0x1b => handle_op_lognot
+  | 0x1d => handle_op_point_add
+  | 0x1e => handle_op_pubkey_for_exp
+  | 0x20 => handle_op_not
+  | 0x21 => handle_op_any
+  | 0x22 => handle_op_all
+  | _ => handle_unused
   f args
 
 

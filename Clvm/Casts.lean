@@ -60,10 +60,7 @@ def node_to_list (args: Node) (cast: Node → Result α Node): Result (List α) 
   else
     let step2 : List (Result α Node) := step1.1.map cast
     -- need to prove that all casts "succeed"
-    let step3 : Result (List α) Node := list_result_to_result_list step2
-    match step3 with
-    | Result.err a b => Result.err a b
-    | Result.ok l => Result.ok l
+    list_result_to_result_list step2
 
 
 
