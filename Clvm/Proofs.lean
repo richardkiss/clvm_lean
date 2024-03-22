@@ -1,6 +1,4 @@
--- import Mathlib
-import Mathlib.Tactic.Linarith
-import Mathlib.Data.UInt
+import Mathlib
 
 import Init.Coe
 import Init.Data
@@ -22,6 +20,7 @@ import Clvm.Hex
 import Clvm.Node
 import Clvm.Opcodes
 import Clvm.Result
+import Clvm.RoundTripInt
 import Clvm.Run
 import Clvm.Serde
 import Clvm.Util
@@ -31,9 +30,9 @@ import Std.Classes.Cast
 import Std.Data.UInt
 
 
-import Mathlib.Algebra.EuclideanDomain.Defs
+--import Mathlib.Algebra.EuclideanDomain.Defs
 --import Mathlib.Tactic.LibrarySearch
-import Mathlib.Data.Fin.Basic
+--import Mathlib.Data.Fin.Basic
 
 
 -- we have here several theorems about running programs
@@ -119,7 +118,7 @@ theorem run_list { x: Node } : apply [OP_L.toNat, 1] x = Result.ok (if is_atom x
 def strlen_example : Node := [OP_STRLEN.toNat, 1]
 
 -- brun (strlen 1) x => a.size (where a is the atom for x)
-theorem run_strlen { a: Atom } : apply strlen_example a = Result.ok (Node.atom a.size) :=
+theorem run_strlen { a: Atom } : apply strlen_example a = Result.ok (Node.atom a.length) :=
   rfl
 
 
@@ -163,24 +162,24 @@ theorem try_int_list_to_node_list_general {k : Nat} : (∀ zl : List Int, zl.len
 
 -- we use `node_to_list` a lot in handle_op_xxx so let's prove it works right
 
-def identity (n: Node) : NResult Node := NResult.ok n
+def identity (n: Node) : Result Node Node := Result.ok n
 
-theorem node_to_list_on_nil : node_to_list Node.nil identity = NResult.ok [] := by
+theorem node_to_list_on_nil : node_to_list Node.nil identity = Result.ok [] := by
   rfl
 
 -- node_to_list works on a single atom
-example (n: Node) : node_to_list (Node.pair n Node.nil) identity = NResult.ok [n] := by
+example (n: Node) : node_to_list (Node.pair n Node.nil) identity = Result.ok [n] := by
   rfl
 
 -- node_to_list works on two atoms
-example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) identity = NResult.ok [n1, n2] := by
+example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) identity = Result.ok [n1, n2] := by
   rfl
 
 
-def atoms_only (n: Node) : NResult Node :=
+def atoms_only (n: Node) : Result Node Node :=
   match n with
-  | Node.atom _ => NResult.ok n
-  | _ => NResult.err n "not an atom"
+  | Node.atom _ => Result.ok n
+  | _ => Result.err n "not an atom"
 
 
 -- define "rightmost_node" as the atom we hit when we repeatedly go to the right
@@ -211,12 +210,12 @@ example { n1 n2 : Node } : right_depth (Node.pair n1 n2) = 1 + right_depth n2 :=
   cases n2 <;> rfl
 
 -- prove `node_to_list` works on nil
-example : node_to_list Node.nil atoms_only = NResult.ok [] := by
+example : node_to_list Node.nil atoms_only = Result.ok [] := by
   rfl
 
 -- define a new property : "is_nil_terminated_list" which is true if the rightmost node is nil
 
-def is_nil_terminated_list (n: Node): Bool := (rightmost_node n).size = 0
+def is_nil_terminated_list (n: Node): Bool := (rightmost_node n).length = 0
 
 -- adding something to the beginning of an existing list doesn't change the nil-terminated property
 theorem nil_terminated_idempotent { n1 n2 : Node } : is_nil_terminated_list (Node.pair n1 n2) = is_nil_terminated_list n2 := by
@@ -265,8 +264,8 @@ theorem node_to_node_list_terminator_rewrite { n : Node } : node_to_node_list_te
 
 -- now we can prove that node_to_list works on a list of atoms
 
--- theorem node_to_atoms_only_list_on_one_atom (a: Atom) : node_to_list (Node.pair (Node.atom a) Node.nil) atoms_only = NResult.ok [n] := by
---   have h_is_ok : atoms_only (Node.atom a) = NResult.ok (Node.atom a) := by rfl
+-- theorem node_to_atoms_only_list_on_one_atom (a: Atom) : node_to_list (Node.pair (Node.atom a) Node.nil) atoms_only = Result.ok [n] := by
+--   have h_is_ok : atoms_only (Node.atom a) = Result.ok (Node.atom a) := by rfl
 
 
 -----
@@ -276,10 +275,12 @@ theorem node_to_node_list_terminator_rewrite { n : Node } : node_to_node_list_te
 -- set_option maxHeartbeats 1000000
 
 -- (l n) => 0 or 1 depending on whether n is an atom
-theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Result.ok (Node.atom (sha256 a)) := by
-  unfold handle_op_sha256
-  simp [node_list_to_node]
-  simp [atom_only_cast, node_to_list, node_to_node_list_terminator, list_nresult_to_nresult_list]
+theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Result.ok (Node.atom (sha256 a.data)) := by
+  -- unfold handle_op_sha256
+  --simp [node_list_to_node]
+  --simp [node_to_list]
+  --simp [node_to_node_list_terminator]
+  rfl
 
 
 
@@ -307,59 +308,151 @@ example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
 
 example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
 
-example: [OP_SHA256.toNat, 1] = Node.atom #[] := by
+example: [OP_SHA256.toNat, 1] = Node.pair (Node.atom ⟨ [11], true ⟩) (Node.pair (Node.atom ⟨ [1], true ⟩) (Node.atom ⟨ [], true ⟩))  := by
   simp
   unfold OP_SHA256
   unfold UInt8.toNat
   unfold UInt8.val
   simp
   simp [nat_list_to_int_list, int_list_to_node_list, int_to_atom, nat_to_atom, nat_to_atom.inner_func, Nat.toUInt8]
-  unfold List.toArray List.toArrayAux Array.push Array.mkEmpty List.concat List.toArrayAux
+  simp [HAnd.hAnd, AndOp.and, Nat.land, Nat.bitwise]
+  simp [node_list_to_node]
+  simp [Node.nil]
+
+
+
+theorem run_sha256_atom { a: Atom } : apply [OP_SHA256.toNat, 1] a = Result.ok (Node.atom (sha256 a)) := by
+  rfl
+
+
+theorem run_sha256_two_atoms { a1 a2: Atom } : apply [OP_SHA256.toNat, 2, 5] [a1, a2] = Result.ok (Node.atom (sha256 (a1 ++ a2))) := by
+  rfl
+
+
+/-
+theorem run_sha256_three_atoms { a1 a2 a3: Atom } : apply [OP_SHA256.toNat, 2, 5, 8] [a1, a2, a3] = Result.ok (Node.atom (sha256 ((a1 ++ a2) ++ a3))) := by
+
+  conv_lhs
+-/
+
+theorem op_add_nil : handle_op_add Node.nil = Result.ok 0 := by rfl
+
+theorem op_add_one_number { z: Int} : handle_op_add [z] = Result.ok (z: Node) := by
+  simp [node_list_to_node]
+  simp [handle_op_add]
+  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  congr
+  exact round_trip_int
+
+theorem op_add_two_numbers { z1 z2: Int} : handle_op_add [z1, z2] = Result.ok ((z1 + z2): Node) := by
+  simp [node_list_to_node]
+  simp [handle_op_add]
+  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  congr
+  exact round_trip_int
+  exact round_trip_int
+
+#eval ((int_list_to_node_list (nat_list_to_int_list [UInt8.toNat OP_ADD, 1])) : Node)
+
+theorem run_add_nil: apply ([OP_ADD.toNat, 0]: Node) (0: Node) = Result.ok 0 := by
+  rfl
+
+
+theorem run_add_one_number {z: Int}: apply ([OP_ADD.toNat, 1]: Node) (z: Node) = Result.ok (z: Node) := by
   simp
+  unfold UInt8.toNat OP_ADD
+  simp [nat_list_to_int_list, int_list_to_node_list]
+  have h16: int_to_atom 16 = [16] := by
+    rfl
+  have h1: int_to_atom 1 = [1] := by
+    rfl
+  rw [h16, h1]
+  simp [atom_cast, max_255]
+  simp [node_list_to_node]
 
-
-
-
-
-
-
-theorem run_sha256 { a: Atom } : apply [OP_SHA256.toNat, 1] a = Result.ok (Node.atom (sha256 a)) := by
-  simp [Function.comp, nat_list_to_int_list, int_list_to_node_list, node_list_to_node]
-  unfold OP_SHA256
-
+  -- input arguments are simplified
+  unfold apply apply_node
   simp
+  unfold OP_Q OP_A Atom.length
+  simp
+  simp [getElem!]
+  simp [as_list]
 
-  unfold Nat.cast NatCast.natCast
+  conv =>
+    pattern map_or_err _ _
+    unfold map_or_err
+    unfold apply_node
+    simp
+    pattern node_at _ _
+    unfold node_at atom_to_nat node_at_wdepth
+    simp [list_nat_to_nat]
+    rfl
+  simp
+  conv =>
+    pattern map_or_err _ _
+    unfold map_or_err
+  simp
+  simp [as_node, as_node.inner_func]
+  simp [handle_opcode, OP_ARRAY]
+  unfold getElem?
+  simp
+  unfold getElem instGetElemArrayNatLtInstLTNatSize Array.get
+  simp [List.get]
 
-  have h1: (instNatCastInt.1 (UInt8.toNat OP_SHA256)) = UInt8.toNat OP_SHA256 := by
+  unfold handle_op_add
+  simp [List.foldl, args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  congr
+  exact round_trip_int
+
+
+
+
+theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD.toNat, 2, 5]: Node) ([z1, z2]: Node) = Result.ok (z: Node) := by
+  simp
+  unfold UInt8.toNat OP_ADD
+  simp [nat_list_to_int_list, int_list_to_node_list]
+  have h16: int_to_atom 16 = [16] := by
+    rfl
+  have h2: int_to_atom 2 = [2] := by
+    rfl
+  have h5: int_to_atom 5 = [5] := by
+    rfl
+  rw [h16, h2, h5]
+  simp [atom_cast, max_255]
+  simp [node_list_to_node]
+
+  -- input arguments are simplified
+  unfold apply apply_node
+  simp
+  unfold OP_Q OP_A Atom.length
+  simp
+  simp [getElem!]
+  simp [as_list]
+
+  conv =>
+    pattern map_or_err _ _
+    unfold map_or_err
+    unfold apply_node
+    simp
+    pattern node_at _ _
+    unfold node_at atom_to_nat node_at_wdepth
+    simp [list_nat_to_nat]
+    unfold node_at_wdepth
     simp
 
-  rw [h1]
-  unfold OP_SHA256
-  unfold UInt8.toNat
-  unfold UInt8.val
-  unfold Fin.val
-  unfold UInt8.instOfNat
-
-
-  simp [apply]
-  unfold Nat.cast NatCast.natCast
-
-
-
-
-
-
-
-
-
-  unfold Nat.cast
-  unfold OP_SHA256 UInt8.toNat UInt8.val Nat.cast NatCast.natCast instNatCastInt
   simp
+  conv =>
+    pattern map_or_err _ _
+    unfold map_or_err
+  simp
+  simp [as_node, as_node.inner_func]
+  simp [handle_opcode, OP_ARRAY]
+  unfold getElem?
+  simp
+  unfold getElem instGetElemArrayNatLtInstLTNatSize Array.get
+  simp [List.get]
 
-
-
-
-
-
-  sorry
+  unfold handle_op_add
+  simp [List.foldl, args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  congr
+  exact round_trip_int

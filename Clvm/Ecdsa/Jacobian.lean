@@ -6,7 +6,7 @@ structure JacobianPoint ( curve: Curve ) where
   x : ZMod curve.p
   y : ZMod curve.p
   z : ZMod curve.p
-  -- proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0
+  proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0
   deriving Repr
 
 
@@ -15,7 +15,8 @@ def is_infinity {curve : Curve} (p : JacobianPoint curve) : Bool :=
 
 
 def zero {curve : Curve} : JacobianPoint curve :=
-  ⟨1, 1, 0⟩
+  have p : 1 ^ 2 - 1 ^ 3 - curve.a * 1 * 0 ^ 4 - curve.b * 0 ^ 6 = 0 := by ring
+  ⟨1, 1, 0, p⟩
 
 
 def double_jacobian {curve : Curve} ( p : (JacobianPoint curve)) : JacobianPoint curve :=
@@ -29,13 +30,8 @@ def double_jacobian {curve : Curve} ( p : (JacobianPoint curve)) : JacobianPoint
   let y' := m * (s - x') - 8 * (y * y) ^ 2
   let z' := 2 * y * z
 
-  -- let proof := p.proof
-
-  -- have hy' : y' = m * (s - x') - 8 * (y ^ 2) ^ 2 := by ring
-
   -- TO TRY: `simp only` and putting `sorry` in front of slow proofs
 
-  /-
   have hK : y ^ 8 * 64 - x * curve.a * z ^ 4 * y ^ 6 * 64 - x ^ 3 * y ^ 6 * 64 - z ^ 6 * y ^ 6 * curve.b * 64 = 0 :=
     calc
       y ^ 8 * 64 - x * curve.a * z ^ 4 * y ^ 6 * 64 - (x ^ 3 * y ^ 6 * 64) - z ^ 6 * y ^ 6 * curve.b * 64 = 64 * (y ^ 6) * (y ^ 2 - x * curve.a * z ^ 4 - x ^ 3 - z ^ 6 * curve.b) := by ring
@@ -45,15 +41,13 @@ def double_jacobian {curve : Curve} ( p : (JacobianPoint curve)) : JacobianPoint
       _ = 0 := by ring
 
   have h : y' ^ 2 - x' ^ 3 - curve.a * x' * z' ^ 4 - curve.b * z' ^ 6 = 0 := by
-    simp
-    ring_nf
+    rw [← hK]
+    ring!
 
-    sorry
-  -/
   if z' = 0 then
     zero
   else
-    ⟨x', y', z'⟩
+    ⟨x', y', z', h⟩
 
 
 def add_jacobian { curve : Curve } ( p1 p2 : JacobianPoint curve ) : JacobianPoint curve :=
@@ -85,9 +79,21 @@ def add_jacobian { curve : Curve } ( p1 p2 : JacobianPoint curve ) : JacobianPoi
       let r := s2 - s1
       let u1h_squared := u1 * h_squared
       let x3 := r * r - h_cubed - 2 * u1h_squared
+      have hx3: x3 = r * r - h_cubed - 2 * u1h_squared := by rfl
       let y3 := r * (u1h_squared - x3) - s1 * h_cubed
+      have hy3: y3 = r * (u1 * h_squared - x3) - s1 * h_cubed := by rfl
       let z3 := h * z1 * z2
-      ⟨x3, y3, z3⟩
+
+      have hr_squared : r * r = (s2 - s1) * (s2 - s1) := by rfl
+
+      have h : y3 ^ 2 - x3 ^ 3 - curve.a * x3 * z3 ^ 4 - curve.b * z3 ^ 6 = 0 := by
+        simp [z3, u1, u2, s1, s2, h, u1h_squared, h_squared, h_cubed]
+        rw [hy3, hx3]
+        rw [hr_squared]
+        sorry
+
+
+      ⟨x3, y3, z3, h⟩
 
 
 instance {curve : Curve} : Add (JacobianPoint curve) where
@@ -97,7 +103,7 @@ instance {curve : Curve} : Add (JacobianPoint curve) where
 
 def fin_mul_jac (b : Nat) (a : JacobianPoint curve) : JacobianPoint curve :=
   if b = 0 then
-    ⟨1, 1, 0⟩
+    zero
   else if h0: b <= 1 then
     a
   else

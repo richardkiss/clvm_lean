@@ -109,7 +109,7 @@ def args_to_bls_points (args: Node) : Result (List (JacobianPoint CurveBLS12381)
   node_to_list args node_to_bls_point
 
 
-def atom_only_cast (n: Node) : Result (Array UInt8) Node :=
+def atom_only_cast (n: Node) : Result Atom Node :=
   match n with
   | Node.atom a => Result.ok a
   | _ => Result.err n "expected atom"

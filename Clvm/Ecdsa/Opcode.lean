@@ -41,7 +41,7 @@ def nat_to_bytes48 (n : Nat) : Array UInt8 :=
 
 
 def serialize_point (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
-  let ap : AffinePoint CurveBLS12381 := jacobian_to_affine p
+  let ap : AffinePoint CurveBLS12381 := jacobian_to_affine p sorry
   match ap with
   | AffinePoint.infinity =>
     #[0xc0] ++ (Array.mkArray 47 0)
@@ -75,34 +75,55 @@ def pow_zmod_fast {curve : Curve}  (x : ZMod curve.p) (n : Nat) : ZMod curve.p :
   else
     loop x n 1
 
-/-
 
+/-
 theorem pow_zmod_eq_pow_zmod_fast {curve : Curve} (x : ZMod curve.p) (n : Nat) : pow_zmod x n = pow_zmod_fast x n := by
   induction n with
   | zero =>
       simp [pow_zmod, pow_zmod_fast, pow_zmod_fast.loop]
   | succ n ih =>
-    simp [pow_zmod, pow_zmod_fast, pow_zmod_fast.loop]
-    rw [ih]
-
+      simp [pow_zmod, pow_zmod_fast, pow_zmod_fast.loop]
+      rw [ih]
 -/
+
+
+theorem exp_alpha_sqrt {curve : Curve} (y : ZMod curve.p) : (pow_zmod_fast y ((curve.p + 1) / 4)) ^ 2 = y := by
+  sorry
 
 
 def points_for_x {curve : Curve} (x : ZMod curve.p) : (AffinePointNotInfinity curve) × (AffinePointNotInfinity curve) :=
   let alpha : ZMod curve.p := x ^ 3 + curve.a * x + curve.b
+  have halpha: alpha = x ^ 3 + curve.a * x + curve.b := by rfl
+
   let exp : Nat := (curve.p + 1) / 4
+  have hexp: exp = (curve.p + 1) / 4 := by rfl
   let y0 := pow_zmod_fast alpha exp
+  have hy0 : y0 = pow_zmod_fast alpha exp := by rfl
   let y1 := -y0
+  have hy1 : y1 = -y0 := by rfl
   let y0_nat : Nat := y0.val
   let y1_nat : Nat := y1.val
-  /-let proof : y0^2 - x^3 - curve.a * x - curve.b = 0 := by
-    simp
+
+  have hy02 : y0 ^ 2 = alpha := by
+    rw [hy0]
+    rw [hexp]
+    rw [exp_alpha_sqrt alpha]
+
+  have proof_0 : y0^2 - x^3 - curve.a * x - curve.b = 0 := by
+    rw [hy02, halpha]
     ring
--/
-  if y0_nat < y1_nat then
-    (⟨x, y0⟩, ⟨x, y1⟩)
-  else
-    (⟨x, y1⟩, ⟨x, y0⟩)
+
+  have proof_1 : y1^2 - x^3 - curve.a * x - curve.b = 0 := calc
+    y1^2 - x^3 - curve.a * x - curve.b = (-y0)^2 - x^3 - curve.a * x - curve.b := by rw [hy1]
+    _ = y0^2 - x^3 - curve.a * x - curve.b := by ring
+    _ = 0 := proof_0
+
+  let t : (AffinePointNotInfinity curve) × (AffinePointNotInfinity curve) :=
+    if y0_nat < y1_nat then
+      ⟨ ⟨x, y0, proof_0⟩, ⟨x, y1, proof_1⟩ ⟩
+    else
+      ⟨ ⟨x, y1, proof_1⟩, ⟨x, y0, proof_0⟩ ⟩
+  t
 
 
 def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) :=
@@ -113,8 +134,8 @@ def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) 
       else
         none
     else
-      let new_x_bytes : Atom := bytes.modify 0 (fun b => b &&& 0b00011111)
       let x0 := bytes[0]!
+      let new_x_bytes : Atom := bytes.set 0 (x0 &&& 0b00011111)
       let x : Nat := atom_to_nat new_x_bytes
       let x_mod : ZMod CurveBLS12381.p := x % CurveBLS12381.p
       let points := points_for_x x_mod
@@ -130,6 +151,5 @@ def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) 
     none
 
 
-
 def normalize_point {curve : Curve} (p : JacobianPoint curve) : JacobianPoint curve :=
-  affine_to_jacobian (jacobian_to_affine p)
+  affine_to_jacobian (jacobian_to_affine p sorry)

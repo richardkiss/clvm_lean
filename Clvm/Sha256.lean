@@ -161,12 +161,16 @@ def a_str : Array UInt8 := #[106, 117, 115, 116, 32, 97, 32, 116, 101, 115, 116,
 
 def test_str := a_str ++ a_str
 
-#eval ((sha256_32 test_str).map u32_to_u8).map b2h
+#eval ((sha256_32 test_str).map hex_u32)
 
 
-def sha256 (msg : Array UInt8) : Bytes32 :=
-  let u32s := sha256_32 msg
+def sha256 (msg : List Nat) : Atom :=
+  let u32s := sha256_32 msg.toArray
   let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
   let s: List UInt8 := r.join
-  let s: Array UInt8 := s.toArray
-  Bytes32.mk s
+  let sn: List Nat := s.map UInt8.toNat
+  have hs: ∀ x, x ∈ s.map UInt8.toNat → x ≤ 255 := by
+    apply map_prop_dist_for_all
+    unfold UInt8.toNat
+    exact fun a ↦ Fin.is_le a.val
+  Atom.mk sn hs

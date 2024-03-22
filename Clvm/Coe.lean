@@ -13,11 +13,13 @@ instance : Coe Atom Int := ⟨atom_to_int⟩
 instance : CoeOut Nat Atom where
   coe := int_to_atom ∘ Int.ofNat
 
-instance Atom.instOfNat: OfNat Atom N where
-  ofNat := int_to_atom (Int.ofNat N)
 
-instance : OfNat Node N where
-  ofNat := Node.atom (int_to_atom (Int.ofNat N))
+instance : CoeOut Int Atom where
+  coe := int_to_atom
+
+instance Atom.instOfNat: OfNat Atom n where
+  ofNat := int_to_atom (Int.ofNat n)
+
 
 def node_list_to_node : List Node → Node
   | [] => Node.nil
@@ -48,3 +50,11 @@ instance : Coe (List Nat) Node where
 
 instance : Coe String Node where
   coe := h2n
+
+
+instance : Coe (List Int) Node where
+  coe := node_list_to_node ∘ int_list_to_node_list
+
+
+instance : Coe (List Atom) Node where
+  coe := node_list_to_node ∘ (List.map Node.atom)

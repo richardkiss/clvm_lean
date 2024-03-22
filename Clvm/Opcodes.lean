@@ -4,7 +4,7 @@ import Clvm.Casts
 --import Clvm.Ecdsa.Bls12381
 --import Clvm.Ecdsa.Jacobian
 import Clvm.Serde
---import Clvm.Sha256
+import Clvm.Sha256
 import Clvm.Result
 import Clvm.Util
 
@@ -157,8 +157,8 @@ def handle_op_sha256 (args: Node) : Result Node Node :=
   match node_to_list args atom_only_cast with
   | Result.err a _ => Result.err a "sha256 on list"
   | Result.ok atoms =>
-    let _msg : List Nat := atoms.foldl (fun a b => a ++ b) []
-    Result.ok Node.nil -- TODO (Node.atom (sha256 msg))
+    let msg : List Nat := atoms.foldl (fun a b => a ++ b) []
+    Result.ok (Node.atom (sha256 msg))
 
 
 def handle_op_substr (args: Node) : Result Node Node :=

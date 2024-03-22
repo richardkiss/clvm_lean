@@ -11,7 +11,7 @@ inductive Node
   deriving Repr
 
 
-def Node.nil := Node.atom (Atom.mk [] true)
+def Node.nil := Node.atom (Atom.mk [] (by decide))
 def Node.one := Node.atom [1]
 
 def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node Node :=
@@ -82,8 +82,8 @@ else
   { n := b.n * hba + (a.n ^^^ hba)}
 
 
-instance : OfNat NodePath N where
-  ofNat := { n := N }
+instance : OfNat NodePath n where
+  ofNat := { n := n }
 
 
 def path_from_string (s: String) : NodePath :=
@@ -141,3 +141,9 @@ def nodepath_for_string (s: String) : NodePath :=
 
 instance : CoeOut String NodePath where
   coe := nodepath_for_string
+
+instance Node.instOfNat : OfNat Node n where
+  ofNat := Node.atom (int_to_atom (Int.ofNat n))
+
+instance : CoeOut Int Node where
+  coe := Node.atom ∘ int_to_atom

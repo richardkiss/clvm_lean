@@ -5,8 +5,8 @@ import Clvm.Serde
 import Clvm.Util
 
 
-def OP_Q: UInt8 := 0x01
-def OP_A: UInt8 := 0x02
+def OP_Q := 0x01
+def OP_A := 0x02
 
 def OP_I: UInt8 := 0x03
 def OP_C: UInt8 := 0x04
@@ -95,22 +95,13 @@ def handle_opcode (byte: Nat) (args: Node) : Result Node Node :=
 
 
 def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Result Node Node :=
-  Result.err program "in ((X)...) syntax X must be lone atom"
-    /-
-  let opcode_as_atom := match opcode with
-  | Node.atom atom => some atom
-  | _ => none
-  let is_nil : Bool := match should_be_nil with
-  | Node.atom atom => (atom.length = 0)
-  | _ => false
-  if ¬is_nil ∨ opcode_as_atom = none then
-    Result.err program "in ((X)...) syntax X must be lone atom"
-  else
-    let opcode_as_byte := match opcode_as_atom with
-    | some atom => atom.data.head
-    | none => 0
-    handle_opcode opcode_as_byte operand_list
-    -/
+  match opcode, should_be_nil with
+  | Node.atom opcode_atom, Node.atom ⟨ [], _ ⟩  =>
+    match opcode_atom.data with
+    | [byte] => handle_opcode byte operand_list
+    | _ => Result.err program "invalid operator"
+  | _, _ => Result.err program "in ((X)...) syntax X must be lone atom"
+
 
 def map_or_err (f: Node -> Result Node Node) (arr: List Node) : (Result (List Node) Node) :=
   match arr with

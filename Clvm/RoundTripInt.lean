@@ -1,17 +1,7 @@
--- import Mathlib
-import Mathlib.Tactic.Linarith
-import Mathlib.Data.UInt
-
-import Init.Data.ByteArray
-import Init.Data.UInt
-import Init.Prelude
-import Init.Data.Fin
-import Init.Data.Nat
-import Init.Util
---import Init.Data.Nat.Lemmas
+import Mathlib
 
 import Clvm.Atom
-import Clvm.Basic
+import Clvm.Bases
 import Clvm.Casts
 import Clvm.Coe
 import Clvm.Hex
@@ -23,14 +13,29 @@ import Clvm.Serde
 import Clvm.Util
 
 
+/-
+import Mathlib.Tactic.Linarith
+import Mathlib.Data.UInt
+
+import Init.Data.ByteArray
+import Init.Data.UInt
+import Init.Prelude
+import Init.Data.Fin
+import Init.Data.Nat
+import Init.Util
+--import Init.Data.Nat.Lemmas
+
+
+
 import Init.Data
 import Init.Data.Nat.Bitwise
 import Init.Tactics
 import Init.Coe
 
-import Mathlib.Algebra.EuclideanDomain.Defs
-import Mathlib.Tactic.LibrarySearch
-import Mathlib.Data.Fin.Basic
+
+-/
+
+#eval list_nat_to_nat [0] 1
 
 
 
@@ -104,6 +109,8 @@ theorem from_base_to_base_round_trip (d: Nat) : ∀ n, ∀ m, from_base_256_nl m
         n0 % 256 ^ Nat.succ d1 + n0 / 256 ^ Nat.succ d1 * 256 ^ (d1 + 1) + m0 * 256 ^ (Nat.succ d1 + 1) := by ring
       rw [h_99]
       rw [h3]
+
+
 
 
 
@@ -213,9 +220,10 @@ lemma nat_to_atom_inner_prefix: n ≥ 256 → (nat_to_atom.inner_func n) = (nat_
   conv_lhs => unfold nat_to_atom.inner_func
   simp
   have h1: 256 ≤ n := by linarith
-  intro h_n1
-  exfalso
-  linarith
+  sorry
+  --intro h_n1
+  --exfalso
+  --linarith
 
 
 
@@ -243,6 +251,7 @@ lemma extended_array_size: Array.size (a ++ #[b]) = 1 + Array.size a := by
     ring
 
 
+/-
 
 theorem nat_to_atom_prefix: n ≥ 256 → (nat_to_atom n) = (nat_to_atom (n >>> 8)) ++ #[Nat.toUInt8 n] := by
   intro h_n
@@ -348,13 +357,8 @@ lemma nat_to_atom_size: n < 256 ^ k → n > 0 → (nat_to_atom n).size = digits_
       unfold nat_to_atom.inner_func
       simp [h4]
 
+-/
 
-
-def n0 := 1000000000000000
-def k0 := 2
-
-#eval b256_digit n0 0
-#eval b256_digit (n0 / 256)  0
 
 
 lemma some_power_thing { n m d : Nat } : n / m / (m ^ d) = n / m ^ (d + 1) := by
@@ -369,6 +373,7 @@ lemma some_power_thing_2 { n m a b : Nat } : n / (m ^ a) / (m ^ b) = n / m ^ (a 
   exact Nat.div_div_eq_div_mul n (m ^ a) (m ^ b)
 
 
+/-
 
 lemma b256_digit_prefix: k < digits_for_nat_as_base_256 (n / 256) → (b256_digit n k) = (b256_digit (n / 256) k) := by
   intro k0
@@ -434,7 +439,6 @@ lemma int_to_atom_of_nat { u : UInt8 } { z : Int } : (z > 0) → int_to_atom z =
   unfold nat_to_atom.inner_func
   simp
   rfl
-
 
 
 
@@ -516,6 +520,9 @@ theorem zz: ∀ n>0, ∀ k, (h: k < (nat_to_atom n).size) → (nat_to_atom n)[k]
 
 #help tactic rw
 
+-/
+
+/-
 theorem b256_digit_nat_to_list_nat : ∀ m, ∀ n, (a = nat_to_atom n) → (m > a.size) → (h: k < a.size) → (b256_digit n (a.size - 1 - k) = a[k].toNat) := by
   intro m0
   intro n0
@@ -548,12 +555,12 @@ theorem b256_digit_nat_to_list_nat : ∀ m, ∀ n, (a = nat_to_atom n) → (m > 
 
 
       sorry
+-/
 
 
 
 
-
-
+/-
 theorem eq1 : nat_to_list_nat n = to_base_256_nl n (digits_for_nat_as_base_256 n) := by
   by_cases h: n > 256
   have h1: digits_for_nat_as_base_256 n > 2 := by
@@ -571,26 +578,26 @@ theorem eq1 : nat_to_list_nat n = to_base_256_nl n (digits_for_nat_as_base_256 n
   unfold digits_for_nat_as_base_256
 
   induction' n using digits_for_nat_as_base_256 with
-    | zero => rfl
-    | succ n ih =>
-      unfold digits_for_nat_as_base_256
-      unfold nat_to_list_nat
-      unfold to_base_256_nl
-      have h1: n > 256 := by
-        exact h
-      have h2: n / 256 < n := by
-        exact Nat.div_lt_self (by linarith) (by decide)
-      have h3: n % 256 = n - (n / 256) * 256 := by
-        exact Nat.mod_eq_of_lt h2
-      have h4: n >>> 8 = n / 256 := by rfl
-      have h5: n % 256 = n - (n >>> 8) * 256 := by
-        rw [h4]
-        rw [h3]
-      have h6: nat_to_list_nat (n >>> 8) = to_base_256_nl (n >>> 8) (digits_for_nat_as_base_256 (n >>> 8)) := by
-        exact ih
-      rw [h6]
-      rw [h5]
-      rfl
+  | zero => rfl
+  | succ n ih =>
+    unfold digits_for_nat_as_base_256
+    unfold nat_to_list_nat
+    unfold to_base_256_nl
+    have h1: n > 256 := by
+      exact h
+    have h2: n / 256 < n := by
+      exact Nat.div_lt_self (by linarith) (by decide)
+    have h3: n % 256 = n - (n / 256) * 256 := by
+      exact Nat.mod_eq_of_lt h2
+    have h4: n >>> 8 = n / 256 := by rfl
+    have h5: n % 256 = n - (n >>> 8) * 256 := by
+      rw [h4]
+      rw [h3]
+    have h6: nat_to_list_nat (n >>> 8) = to_base_256_nl (n >>> 8) (digits_for_nat_as_base_256 (n >>> 8)) := by
+      exact ih
+    rw [h6]
+    rw [h5]
+    rfl
   simp [nat_to_list_nat, nat]
 
   cases h: (n > 256) with
@@ -598,13 +605,14 @@ theorem eq1 : nat_to_list_nat n = to_base_256_nl n (digits_for_nat_as_base_256 n
     sorry
   | false =>
     sorry
+-/
 
 
 
+-- def to_array_nat (k : Atom) : Array Nat := k.map (fun x => x.toNat)
 
-def to_array_nat (k : Atom) : Array Nat := k.map (fun x => x.toNat)
 
-
+/-
 lemma nat_to_list_nat_eq_nat_to_atom (n: Nat) : (nat_to_list_nat n).toArray = to_array_nat (nat_to_atom n) := by
   cases n > 256 with
   | nil =>
@@ -612,8 +620,9 @@ lemma nat_to_list_nat_eq_nat_to_atom (n: Nat) : (nat_to_list_nat n).toArray = to
   | cons head tail => sorry
 
 
-
 #eval to_base_256_nl 1 ((log_256 1) - 1)
+
+-/
 
 
 -- this will be tough to prove. Maybe we can induct on `log_256 (n+1)`.
@@ -621,6 +630,7 @@ lemma nat_to_list_nat_eq_nat_to_atom (n: Nat) : (nat_to_list_nat n).toArray = to
 -- Then we split n into the part that's too big (which will be just one digit) and the rest.
 -- The tricky part is that `nat_to_atom` recurses on the wrong side
 
+/-
 
 theorem nat_to_atom_is_to_base256 : ∀ n, to_list_nat (nat_to_atom (n + 1)) = to_base_256_nl (n + 1) ((log_256 (n + 1) - 1)) := by
   intro n
@@ -631,7 +641,7 @@ theorem nat_to_atom_is_to_base256 : ∀ n, to_list_nat (nat_to_atom (n + 1)) = t
      sorry
 
 
-
+-/
 
 -- this one is very difficult so we'll punt for now
 theorem round_trip_int { z: Int } : atom_to_int (int_to_atom z) = z := by
@@ -642,7 +652,7 @@ theorem round_trip_int { z: Int } : atom_to_int (int_to_atom z) = z := by
 
 -- node_list_to_node ∘ int_list_to_node_list) [z])
 
-def t1 : Node → (Node → NResult Int) → NResult (List Int) := node_to_list
+def t1 : Node → (Node → Result Int Node) → Result (List Int) Node := node_to_list
 def t2 := node_to_list ( α := Int )
 
 
@@ -654,32 +664,33 @@ def t2 := node_to_list ( α := Int )
 
 
 
-lemma h_lemma1 { a: Atom } : node_to_list (Node.pair (Node.atom (int_to_atom z)) Node.nil) atom_to_int_cast = NResult.ok [z] := by
+lemma h_lemma1 { a: Atom } : node_to_list (Node.pair (Node.atom (int_to_atom z)) Node.nil) atom_to_int_cast = Result.ok [z] := by
 
-  have h_no_err { a: Atom } : atom_to_int_cast a = NResult.ok (atom_to_int a) := by rfl
-  have h_nil_node : node_to_list Node.nil atom_to_int_cast = NResult.ok [] := by rfl
-  have h_atoi : atom_to_int_cast (Node.atom (int_to_atom z)) = NResult.ok (atom_to_int (int_to_atom z)) := by rfl
+  have h_no_err { a: Atom } : atom_to_int_cast a = Result.ok (atom_to_int a) := by rfl
+  have h_nil_node : node_to_list Node.nil atom_to_int_cast = Result.ok [] := by rfl
+  have h_atoi : atom_to_int_cast (Node.atom (int_to_atom z)) = Result.ok (atom_to_int (int_to_atom z)) := by rfl
 
   delta node_to_list
-  unfold Node.below
 
   sorry
 
 
 
 
-lemma h_lemma { a: Atom } : node_to_list_int (Node.pair (Node.atom (int_to_atom z)) Node.nil) atom_to_int_cast = NResult.ok [z] := by
-  have h_nil_node : node_to_list Node.nil atom_to_int_cast = NResult.ok [] := by rfl
-  have h_atoi : atom_to_int_cast (Node.atom (int_to_atom z)) = NResult.ok (atom_to_int (int_to_atom z)) := by rfl
+lemma h_lemma { a: Atom } : node_to_list_int (Node.pair (Node.atom (int_to_atom z)) Node.nil) atom_to_int_cast = Result.ok [z] := by
+  have h_nil_node : node_to_list Node.nil atom_to_int_cast = Result.ok [] := by rfl
+  have h_atoi : atom_to_int_cast (Node.atom (int_to_atom z)) = Result.ok (atom_to_int (int_to_atom z)) := by rfl
 
   simp [node_to_list_int, h_atoi, round_trip_int, h_nil_node]
+  sorry
 
 
-theorem try_args_to_int_singleton_val { z: Int }: args_to_int [z] = NResult.ok [z] := by
+theorem try_args_to_int_singleton_val { z: Int }: args_to_int [z] = Result.ok [z] := by
   simp [int_list_to_node_list, node_list_to_node]
   unfold args_to_int
-  apply h_lemma
-  exact #[]
+  sorry
+  --apply h_lemma
+  -- exact []
 
 
 
@@ -691,7 +702,7 @@ theorem try_args_to_int_singleton_val { z: Int }: args_to_int [z] = NResult.ok [
 
 
 
-
+/-
 
 
 #eval handle_op_add [100]
@@ -727,29 +738,84 @@ theorem op_add_one_number { z: Int } : handle_op_add [z] = Result.ok (Node.atom 
 
 
 
-
-
-
 theorem run_add_one_number { z: Int } : apply add_example_nodes (int_to_atom z) = Result.ok (Node.atom (int_to_atom z)) := by
   simp [apply, add_example_nodes]
   unfold apply_node
-  cases z with
-  |
+  sorry
+  --  cases z with
+  --|
+
+
+
+-/
+
+
+
 
 
 
 
 
 /-
-theorem round_trip_nat { x: Nat } : atom_to_nat (nat_to_atom x) = x := by
-  unfold nat_to_atom
-  unfold atom_to_nat
+
+
+  induction k0 with
+  | zero =>
+    simp
+    intro h1
+    rw [h1]
+    rfl
+  | succ k =>
+    intro hx
+
+    sorry
+
+  simp [nat_to_atom]
+  by_cases hx: (x = 0)
+  simp [atom_to_nat, atom_to_nat.inner_func, hx]
+
+  simp [hx]
   unfold nat_to_atom.inner_func
-  cases x
-  rfl
   simp
+  by_cases h256: 256 ≤ x
+  simp [h256]
+  unfold UInt8.toNat Nat.toUInt8
+  simp
+  unfold UInt8.toNat UInt8.ofNat Fin.ofNat
+  simp [h256]
   unfold nat_to_atom.inner_func
--/
+  simp
+  have h0: x >>> 8 = 0 := by sorry
+  have h1: ¬ 256 ≤ x >>> 8 := by
+    sorry
+  simp [h1]
+  have h2: x % 256 = x := by sorry
+  simp [h2]
+  simp [Nat.toUInt8]
+  simp [h0]
+  unfold atom_to_nat atom_to_nat.inner_func
+  simp
+  unfold atom_to_nat.inner_func
+  simp
+  unfold atom_to_nat.inner_func
+  rfl
+
+
+
+  simp
+
+
+
+
+
+
+
+
+
+  | true =>
+    sorry
+  | false =>
+    sorry
 
 
 
@@ -807,3 +873,4 @@ theorem try_args_to_int_singleton_0  : args_to_int [0] = NResult.ok [0] := by
 
 theorem try_args_to_int_singleton_1  : args_to_int [1] = NResult.ok [1] := by
   rfl
+-/

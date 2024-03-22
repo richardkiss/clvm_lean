@@ -38,8 +38,8 @@ def affine_ni_to_jacobian {curve : Curve} (ap : AffinePointNotInfinity curve) : 
   let x := ap.x
   let y := ap.y
   let z := 1
-  -- let proof := affine_to_jac_works ap.proof rfl
-  ⟨x, y, z⟩
+  let proof := affine_to_jac_works ap.proof rfl
+  ⟨x, y, z, proof⟩
 
 
 def affine_to_jacobian {curve : Curve} (ap : AffinePoint curve) : JacobianPoint curve :=
@@ -49,15 +49,15 @@ def affine_to_jacobian {curve : Curve} (ap : AffinePoint curve) : JacobianPoint 
     let x : ZMod curve.p := 1
     let y : ZMod curve.p := 1
     let z : ZMod curve.p := 0
-    have _proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := by
+    have proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := by
       sorry
-    ⟨x, y, z⟩ -- , proof⟩
+    ⟨x, y, z, proof⟩
 
 
-def jacobian_to_affine {curve : Curve} (jp : JacobianPoint curve) /-(is_unit: IsUnit jp.z)-/: AffinePoint curve :=
+def jacobian_to_affine {curve : Curve} (jp : JacobianPoint curve) (is_unit: IsUnit jp.z): AffinePoint curve :=
   let x := jp.x
   let y := jp.y
-  let _z := jp.z
+  let z := jp.z
 
   if is_infinity jp then
     AffinePoint.infinity
@@ -68,15 +68,14 @@ def jacobian_to_affine {curve : Curve} (jp : JacobianPoint curve) /-(is_unit: Is
     let x' := x * w ^ 2
     let y' := y * w ^ 3
 
-    /-
+
     have h_inv: 1 = w * z := by
       symm
       refine ZMod.inv_mul_of_unit jp.z ?h
       exact is_unit
-  -/
-    -- have p1 : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := jp.proof
 
-    /-
+    have p1 : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := jp.proof
+
     have new_proof : y' ^ 2 - x' ^ 3 - curve.a * x' - curve.b = 0 :=
       calc
         y' ^ 2 - x' ^ 3 - curve.a * x' - curve.b = (y * w ^ 3) ^ 2 - (x * w ^ 2) ^ 3 - curve.a * x * w ^ 2 - curve.b := by ring
@@ -87,9 +86,8 @@ def jacobian_to_affine {curve : Curve} (jp : JacobianPoint curve) /-(is_unit: Is
         _ = (w ^ 6) * (y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6) := by ring
         _ = (w ^ 6) * 0 := by rw [p1]
         _ = 0 := by ring
-        -/
 
-    AffinePoint.mk (AffinePointNotInfinity.mk x' y') -- new_proof)
+    AffinePoint.mk (AffinePointNotInfinity.mk x' y' new_proof)
 
 
 

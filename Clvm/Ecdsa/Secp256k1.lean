@@ -25,10 +25,9 @@ def Gy : ZMod CurveSecp256k1.p := ⟨ 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448
 theorem legit_b : Gx * Gx * Gx + CurveSecp256k1.a * Gx + CurveSecp256k1.b = Gy * Gy := by rfl
 
 
-def generator_secp256k1 : JacobianPoint CurveSecp256k1 := JacobianPoint.mk Gx Gy 1
+def generator_secp256k1 : JacobianPoint CurveSecp256k1 := JacobianPoint.mk Gx Gy 1 (by decide)
 
 
+-- #eval jacobian_to_affine generator_secp256k1
 
-#eval jacobian_to_affine generator_secp256k1
-
-#eval jacobian_to_affine (generator_secp256k1+ (generator_secp256k1 + generator_secp256k1))
+-- #eval jacobian_to_affine (generator_secp256k1+ (generator_secp256k1 + generator_secp256k1))
