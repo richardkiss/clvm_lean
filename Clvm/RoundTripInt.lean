@@ -374,7 +374,6 @@ lemma some_power_thing_2 { n m a b : Nat } : n / (m ^ a) / (m ^ b) = n / m ^ (a 
 
 
 /-
-
 lemma b256_digit_prefix: k < digits_for_nat_as_base_256 (n / 256) → (b256_digit n k) = (b256_digit (n / 256) k) := by
   intro k0
   unfold b256_digit
@@ -440,57 +439,160 @@ lemma int_to_atom_of_nat { u : UInt8 } { z : Int } : (z > 0) → int_to_atom z =
   simp
   rfl
 
+-/
+
+lemma round_trip_nat : (atom_to_nat (nat_to_atom n)) = n := by
+  sorry
+
+
+lemma nat_to_atom_head (hn: n > 0) (hb: 256 > 1): (nat_to_atom n).data.getLast? = some (nth_digit_of_nat_in_base_b_le 0 n hb) := by
+  unfold nat_to_atom
+  have hn0: ¬ n = 0 := by linarith
+  simp [hn0, max_255]
+  unfold List.map
+  unfold nat_to_atom.inner_func
+  by_cases h1: n ≥ 256
+  simp [h1]
+  sorry
+  sorry
 
 
 
-theorem round_trip_int (n: Nat) : atom_to_int (int_to_atom n) = n := by
-    by_cases hn: n = 0
-    simp [hn]
-    simp [int_to_atom, atom_to_int, nat_to_atom]
-    rfl
-    have h1: n > 0 := by sorry
+/-
+lemmas we need:
+
+∀ p > 0, (int_to_atom p).data[0] &&& 128 = 0
+
+∀ k ∈ (int_to_atom p).data, k < 256
+
+n ≠ 0 → ∃ head, ∃ tail, (int_to_atom n).data = head :: tail
+
+∀ neg < 0, (int_to_atom neg).data[0] &&& 128 = 128
 
 
-      simp [Int.ofNat]
-      unfold Nat.cast NatCast.natCast instNatCastInt Int.ofNat
+let atom_size := byte_count_for_nat (n + 1)
+have h_size: Atom.length (nat_to_atom (1 <<< (8 * atom_size) - n - 1)) = atom_size := by sorry
+
+
+have h_rw: Nat.cast ((add_amount: Nat) - (n: Nat) - (1 :Nat)) = (add_amount: Int) - (n: Int) - (1 : Int) := by sorry
+
+-/
+
+
+lemma zzz: ∀ p > 0, a = (int_to_atom p) → ∃ v, ∃ tail, a.data = v :: tail ∧ v &&& 128 = 0 := by
+  -- need a "head to tail" version of `nat_to_atom`
+  sorry
+
+
+lemma h_int_stuff (k n : Nat) (hk: k ≥ n): Nat.cast ((k: Nat) - (n: Nat)) = (k: Int) - (n: Int) := by
+  have hk: k - n + n = k := by
+    apply Nat.sub_add_cancel
+    assumption
+  rw [← hk]
+  simp
+
+
+lemma h_int_stuff1 (k n : Nat) (hk: k ≥ n): k - n = Int.natAbs ((Int.ofNat k) - (Int.ofNat n)) := by
+  have hk: k - n + n = k := by
+    apply Nat.sub_add_cancel
+    assumption
+  rw [← hk]
+  simp
+
+
+lemma int_of_nat_diff_distributes (k n : Nat) (hk: k ≥ n): Int.ofNat (k - n) = (Int.ofNat k) - (Int.ofNat n) := by
+  have hk: k - n + n = k := by
+    apply Nat.sub_add_cancel
+    assumption
+  rw [← hk]
+  simp
+
+
+
+lemma n_p1: -(n + 1) = Int.negSucc n := by rfl
+
+
+example { m n : Nat} (h: m ≥ n + 1 ): ↑(m - n - 1) - ↑m = Int.negSucc n := by
+  have h3: Int.ofNat (m - n - 1) = Int.ofNat m - Int.ofNat (n + 1) := by
+    exact int_of_nat_diff_distributes m (n + 1) h
+
+  simp at h3
+  rw [h3]
+  simp
+  rw [← n_p1]
+  simp
+
+
+
+
+
+
+theorem round_trip_int (z: Int) : atom_to_int (int_to_atom z) = z := by
+  match z with
+  | Int.ofNat n =>
+      unfold int_to_atom
+      simp
+      let k := (nat_to_atom n).data
+      have hk: k = (nat_to_atom n).data := by rfl
+      match k with
+
+      | [] =>
+        rw [← hk]
+        simp
+        unfold atom_to_int
+        simp [round_trip_nat]
+        rw [← hk]
+
+      | v :: tail =>
+        have hv: v &&& 128 = 0 := by sorry
+        rw [← hk]
+        simp [hv]
+        unfold atom_to_int
+        simp [round_trip_nat]
+        rw [← hk]
+        simp [hv]
+  | Int.negSucc n =>
+      unfold int_to_atom
+      simp
+      let atom_size := byte_count_for_nat (n + 1)
+      have has: atom_size = byte_count_for_nat (n + 1) := by rfl
+      let add_amount : Nat := 1 <<< (8 * atom_size)
+      have haa: add_amount = 1 <<< (8 * atom_size) := by rfl
+      have h_size: Atom.length (nat_to_atom (1 <<< (8 * atom_size) - n - 1)) = atom_size := by sorry
+      let k := (nat_to_atom (add_amount - (n + 1))).data
+      have hk: k = (nat_to_atom (add_amount - n - 1)).data := by rfl
+      rw [← hk]
+      have hd: ∃ head, ∃ tail, k = head :: tail := by sorry
+      obtain ⟨head, tail, hk1⟩ := hd
+      rw [hk1]
+      simp
+      rw [← haa]
+      have h_neg: head &&& 128 = 128 := by sorry
+      simp [h_neg]
+      unfold atom_to_int
+      rw [round_trip_nat]
+      rw [← hk]
+      rw [hk1]
+      simp
+      simp [h_neg]
+      rw [haa]
+      rw [h_size]
+      rw [← haa]
+
+      have h2_aan: add_amount ≥ n+1 := by sorry
+
+      have h3: Int.ofNat (add_amount - n - 1) = Int.ofNat add_amount - Int.ofNat (n + 1) := by
+        exact int_of_nat_diff_distributes add_amount (n + 1) h2_aan
+
+      simp at h3
+      rw [h3]
+      simp
+      rw [← n_p1]
       simp
 
-      simp [int_to_atom]
 
 
-
-
-
-
-
-
-
-      simp [Int.ofNat]
-      unfold int_to_atom
-
-
-      simp [int_to_atom]
-      cases n with
-      | zero =>
-          simp
-
-          unfold atom_to_int
-          simp
-
-
-          simp
-          rfl
-      | succ n =>
-          simp
-          simp [nat_to_atom]
-          unfold nat_to_atom.inner_func
-          have h1: ¬ n+1 < 0 := by linarith
-          sorry
-  | negSucc n => sorry
-
-
-
-
+/-
 
 
 
@@ -642,10 +744,6 @@ theorem nat_to_atom_is_to_base256 : ∀ n, to_list_nat (nat_to_atom (n + 1)) = t
 
 
 -/
-
--- this one is very difficult so we'll punt for now
-theorem round_trip_int { z: Int } : atom_to_int (int_to_atom z) = z := by
-  sorry
 
 
 

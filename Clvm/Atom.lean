@@ -92,7 +92,7 @@ def atom_to_int (atom: Atom) : Int :=
   let as_nat := atom_to_nat atom
   match (atom: List Nat) with
   | [] => as_nat
-  | a :: _ => if a < 0x80 then as_nat else as_nat - (1 <<< (8 * atom.length))
+  | a :: _ => if a &&& 0x80 == 0x80 then as_nat - (1 <<< (8 * atom.length)) else as_nat
 
 
 def nat_to_atom (n: Nat) : Atom :=
@@ -158,7 +158,7 @@ def int_to_atom (z: Int) : Atom :=
   match z with
   | Int.ofNat _ =>
       match as_nat_atom.data with
-      | v :: _ => if v &&& 0x80 = 0 then as_nat_atom else Atom.to (0 :: as_nat_atom.data)
+      | v :: _ => if v &&& 0x80 = 0x80 then Atom.to (0 :: as_nat_atom.data) else as_nat_atom
       | [] => as_nat_atom
   | Int.negSucc _ =>
       match as_nat_atom.data with

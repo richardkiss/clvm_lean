@@ -1,7 +1,7 @@
 -- goals:
 -- show that our simplest formula for getting the nth digit of a number in base b is correct
 --
--- show that the round-trip works is idempotent
+-- show that the round-trip works, ie. is idempotent
 --
 -- prove that our more efficient mechanism to generate the digits of a number in base b matches
 --  the simple mechanism
@@ -170,7 +170,6 @@ def nth_digit_of_nat_in_base_b {b : Nat} (n: Nat) (v: Nat) (hb: b>1) : Nat :=
   nth_digit_of_nat_in_base_b_le  (Nat.clog b v - 1 - n) v hb
 
 
-
 def nat_to_base_b {b: Nat} (v: Nat) (hb: b>1): List Nat :=
   (nat_to_base_b_le v hb).reverse
 
@@ -186,16 +185,12 @@ def base_b_to_nat (ds: List Nat) (b: Nat) : Nat :=
 
 
 
-
-
 def N := 2006
 #eval Nat.clog BASE N
 #eval nth_digit_of_nat_in_base_b 3 N B
 
 
-
 #eval base_b_to_nat [1, 2, 3, 4, 9] 10
-
 
 
 def nat_to_base_b_acc (v: Nat) (acc: List Nat) (hb: b>1): List Nat :=
@@ -207,13 +202,11 @@ def nat_to_base_b_acc (v: Nat) (acc: List Nat) (hb: b>1): List Nat :=
       acc
 
 
-
 def base_b_to_nat_acc (ds: List Nat) (b: Nat) (acc: Nat) : Nat :=
   match ds with
   | [] => acc
   | d :: ds' =>
     base_b_to_nat_acc ds' b (acc * b + d)
-
 
 
 def d := 10

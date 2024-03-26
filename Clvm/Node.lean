@@ -11,7 +11,10 @@ inductive Node
   deriving Repr
 
 
+@[simp]
 def Node.nil := Node.atom (Atom.mk [] (by decide))
+
+@[simp]
 def Node.one := Node.atom [1]
 
 def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node Node :=

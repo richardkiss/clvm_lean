@@ -215,7 +215,7 @@ example : node_to_list Node.nil atoms_only = Result.ok [] := by
 
 -- define a new property : "is_nil_terminated_list" which is true if the rightmost node is nil
 
-def is_nil_terminated_list (n: Node): Bool := (rightmost_node n).length = 0
+def is_nil_terminated_list (n: Node): Prop := (rightmost_node n).length = 0
 
 -- adding something to the beginning of an existing list doesn't change the nil-terminated property
 theorem nil_terminated_idempotent { n1 n2 : Node } : is_nil_terminated_list (Node.pair n1 n2) = is_nil_terminated_list n2 := by
@@ -280,7 +280,6 @@ theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Result.ok (Node
   rfl
 
 
-
 example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
 
 
@@ -306,18 +305,30 @@ example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
 example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
 
 
-lemma z503: (∃ r, args_to_int n = Result.ok r) → (is_nil_terminated_list n) := by
+
+def is_ok (f: α → Result β γ) (p: α) := ∃ r, f p = Result.ok r
+
+
+lemma args_to_int_okay_nil_terminated: is_ok args_to_int n → (is_nil_terminated_list n) := by
   intro h
   obtain ⟨r, h0⟩ := h
   by_contra h1
   unfold is_nil_terminated_list at h1
+  unfold args_to_int at h0
+  unfold node_to_list at h0
+  rw [node_to_node_list_terminator_rewrite] at h0
+  simp at h0
+  unfold Atom.length at h1
+  have hgt: List.length (rightmost_node n).data > 0 := by
+    by_contra hgtn
+    have hgt0: List.length (rightmost_node n).data = 0 := by
+      linarith
+    exact h1 hgt0
+  simp [hgt] at h0
 
 
 
-  sorry
-
-
-theorem round_trip_int_cast (zs: List Int) : args_to_int (zs: Node) = Result.ok zs := by
+theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Result.ok zs := by
   induction zs with
   | nil => rfl
   | cons z zs ih =>
@@ -330,19 +341,18 @@ theorem round_trip_int_cast (zs: List Int) : args_to_int (zs: Node) = Result.ok 
     unfold node_to_list
     simp only [gt_iff_lt]
 
+    have zzz0: is_nil_terminated_list (node_list_to_node (int_list_to_node_list zs)) := by
+      simp at ih
+      exact args_to_int_okay_nil_terminated ⟨zs, ih⟩
+
     have zzz1: List.length (node_to_node_list_terminator (node_list_to_node (int_list_to_node_list zs))).2 = 0 := by
-
       rw [node_to_node_list_terminator_rewrite]
-      simp
-
-      sorry
+      congr
 
     have zzz: (node_to_node_list_terminator (Node.pair (Node.atom (int_to_atom z)) (node_list_to_node (int_list_to_node_list zs)))).2.length = 0 := by
-      rw [node_to_node_list_terminator_ok]
-      unfold rightmost_node
-      have zzzzz: (rightmost_node (node_list_to_node (int_list_to_node_list zs))).length = 0 := by
-        sorry
-      sorry
+      rw [node_to_node_list_terminator_rewrite]
+      congr
+
     simp [zzz]
     unfold node_to_node_list_terminator
     unfold List.map
@@ -378,38 +388,38 @@ theorem run_sha256_three_atoms { a1 a2 a3: Atom } : apply [OP_SHA256.toNat, 2, 5
 theorem op_add_nil : handle_op_add Node.nil = Result.ok 0 := by rfl
 
 
-theorem op_add_one_number { z: Int} : handle_op_add [z] = Result.ok (z: Node) := by
-  simp [node_list_to_node]
-  simp [handle_op_add]
-  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
-  congr
-  exact round_trip_int
+theorem op_add_n_numbers { zs : List Int } : handle_op_add zs = Result.ok (Node.atom (int_to_atom (zs.foldl (fun a b => (a + b)) 0))) := by
+  unfold handle_op_add
+  rw [round_trip_int_cast]
 
 
-theorem op_add_two_numbers { z1 z2: Int} : handle_op_add [z1, z2] = Result.ok ((z1 + z2): Node) := by
-  simp [node_list_to_node]
-  simp [handle_op_add]
-  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
-  congr
-  exact round_trip_int
-  exact round_trip_int
+def quote_node (n: Node) : Node := Node.pair ([OP_Q] : Atom) n
 
 
-theorem op_add_n_numbers { zs : List Int} : handle_op_add zs = Result.ok (Node.atom (int_to_atom (zs.foldl (fun a b => (a + b)) 0))) := by
-  induction zs with
+def quoted_nodes (ns : List Node) : Node :=
+  match ns with
+  | [] => Node.nil
+  | n :: ns0 =>
+      Node.pair (quote_node n) (quoted_nodes ns0)
+
+
+#eval quoted_nodes [1, 2, 3]
+
+
+
+
+lemma map_or_err_to_quoted_nodes {hv: v > 0} { f: Node -> Result Node Node } { ns: List Node } : map_or_err (fun n => apply_node v n args) (quoted_nodes ns) = Result.ok (node_list_to_node ns) := by
+  induction ns with
   | nil => rfl
-  | cons z zs ih =>
-    simp [node_list_to_node]
-
-    conv_lhs =>
-      simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
-      unfold List.length
-
-
-
-    congr
-    exact round_trip_int
-    exact ih
+  | cons head tail h_tail =>
+    simp [map_or_err, apply_node, node_at, atom_to_nat, node_at_wdepth, list_nat_to_nat]
+    unfold quote_node OP_Q
+    simp [atom_cast]
+    simp [h_tail]
+    unfold apply_node
+    have hv0: ¬ v = 0 := by linarith
+    simp [hv0]
+    rfl
 
 
 theorem run_add_nil: apply ([OP_ADD.toNat, 0]: Node) (0: Node) = Result.ok 0 := by
@@ -529,3 +539,160 @@ theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL.toNat): Node),
   simp [handle_op_mul]
   simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
   rw [round_trip_int, round_trip_int]
+
+
+def node_applies (k: Nat) (n args: Node) := is_ok (fun n => apply_node k n args) n
+
+
+lemma quoted_node_is_ok (args: Node): node_applies 1 (Node.pair OP_Q n) args := by
+  simp [node_applies, is_ok]
+  use n
+  rfl
+
+
+lemma map_or_err_is_ok (ns: List Node) (args: Node) : (∀ n ∈ ns, node_applies k n args) → is_ok (map_or_err (fun n ↦ apply_node k n args)) ns := by
+  induction ns with
+  | nil =>
+    simp [node_list_to_node]
+    unfold apply_node
+    simp [map_or_err, is_ok]
+  | cons head tail ih =>
+    intros h0
+    unfold is_ok
+    unfold map_or_err
+    simp
+    unfold node_list_to_node
+    simp
+    have hn: ∀ n ∈ tail, node_applies k n args := by
+      intros n hn
+      exact h0 n (List.mem_cons_of_mem head hn)
+    have h_ok: is_ok (map_or_err (fun n ↦ apply_node k n args)) tail := by
+      exact ih hn
+    unfold is_ok at h_ok
+    obtain ⟨r, h1⟩ := h_ok
+    rw [h1]
+    simp
+    have h_head: node_applies k head args := by
+      exact h0 head (List.mem_cons_self head tail)
+    unfold node_applies is_ok at h_head
+    obtain ⟨r1, h2⟩ := h_head
+    simp at h2
+    use Node.pair r1 r
+    rw [h2]
+
+
+
+---- unfinished proofs go after this line
+
+
+
+lemma concat_of_quoted_nodes_is_okay (ns: List Node) (f: Node): node_applies 2 (Node.pair (Node.atom [OP_CONCAT.toNat]) (quoted_nodes ns)) 0 := by
+  unfold UInt8.toNat OP_CONCAT
+  simp [atom_cast, max_255]
+  simp [node_applies, is_ok]
+  obtain ⟨r, h0⟩ := map_or_err_is_ok ns 0
+  simp [apply_node]
+  simp [Atom.length, OP_Q, OP_A, getElem!]
+  induction ns with
+  | nil =>
+    unfold map_or_err
+    unfold quoted_nodes
+    simp
+    simp [handle_opcode, handle_op_concat]
+    simp [node_to_list]
+    rw [node_to_node_list_terminator_rewrite]
+    simp [alt_node_to_node_list_terminator_without_terminator, rightmost_node]
+    simp [list_result_to_result_list]
+  | cons head tail ih =>
+    unfold map_or_err
+    unfold quoted_nodes
+    simp
+    obtain ⟨r, h0⟩ := ih
+    rw [h0]
+
+  unfold quoted_nodes
+  rfl
+
+
+theorem run_add_n_numbers { zs: List Int } : program = (Node.pair ([OP_ADD.toNat] : Atom) (quoted_nodes zs)) → apply program 0 =
+    Result.ok (Node.atom (int_to_atom (zs.foldl (fun (a b: Int) => a + b) 0))) := by
+
+  unfold UInt8.toNat OP_ADD
+  simp [atom_cast, max_255]
+
+  intro hp
+  induction zs with
+  | nil =>
+
+    unfold apply apply_node
+    simp
+    simp [hp]
+    simp [Atom.length, OP_Q, OP_A, getElem!]
+
+    rfl
+
+  | cons head tail ih =>
+
+    unfold apply apply_node
+    simp
+    simp [hp]
+    simp [Atom.length, OP_Q, OP_A, getElem!]
+    rw [map_or_err_to_quoted_nodes]
+    unfold node_list_to_node
+    simp
+    simp [pure, List.ret]
+    simp [handle_opcode]
+    simp [handle_op_add]
+    simp [args_to_int, node_to_list]
+    rw [node_to_node_list_terminator_rewrite]
+    simp [alt_node_to_node_list_terminator_without_terminator, rightmost_node]
+
+
+
+
+
+
+
+
+
+
+    simp [map_or_err, apply_node, node_at, atom_to_nat, node_at_wdepth, list_nat_to_nat]
+    simp [hp]
+    simp [Atom.length, OP_Q, OP_A, getElem!]
+    unfold map_or_err
+    simp [handle_opcode]
+
+
+
+    simp [handle_opcode]
+    simp [handle_op_add]
+    rfl
+
+
+
+
+
+
+    simp [int_to_atom, nat_to_atom, List.map, max_255, List.foldr, List.foldl, List.length, nat_to_atom.inner_func]
+
+    unfold getElem instGetElemArrayNatLtInstLTNatSize Array.size Array.get List.get
+    simp
+
+    simp
+
+
+
+
+
+
+
+    simp [apply, apply_node, Node.nil]
+    simp [atom_to_nat, node_at, node_at_wdepth, list_nat_to_nat]
+    simp
+
+
+
+
+
+  | cons head tail ih =>
+    sorry
