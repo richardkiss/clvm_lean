@@ -238,6 +238,7 @@ def handle_op_mul (args: Node) : Result Node Node :=
     let total : Int := args.foldl (fun a b => a * b) 1
     Result.ok (Node.atom (int_to_atom total))
 
+
 def handle_op_div (args: Node) : Result Node Node :=
   match args with
   | Node.pair n0 (Node.pair n1 (Node.atom ⟨ [], _⟩)) =>

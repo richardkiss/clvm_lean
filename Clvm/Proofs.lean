@@ -12,18 +12,7 @@ import Init.Prelude
 import Init.Tactics
 --import Init.Data.Nat.Lemmas
 
-import Clvm.Atom
 import Clvm.Basic
-import Clvm.Casts
-import Clvm.Coe
-import Clvm.Hex
-import Clvm.Node
-import Clvm.Opcodes
-import Clvm.Result
-import Clvm.RoundTripInt
-import Clvm.Run
-import Clvm.Serde
-import Clvm.Util
 
 import Std.Classes.Cast
 --import Std.Data.Int.Init.Lemmas
