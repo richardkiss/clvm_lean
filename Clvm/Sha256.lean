@@ -4,6 +4,7 @@
 -- SHA-256 state
 
 import Clvm.Atom
+import Clvm.Coe
 import Clvm.Hex
 
 
@@ -151,8 +152,9 @@ def sha256_32 (msg : Array UInt8) : Array UInt32 :=
 def u32_to_u8 (x : UInt32) : Array UInt8 :=
   #[(x >>> 24).toUInt8, (x >>> 16).toUInt8, (x >>> 8).toUInt8, x.toUInt8]
 
+
 def hex_u32 (x : UInt32) : String :=
-  b2h (u32_to_u8 x)
+  b2h_uint8 (u32_to_u8 x)
 
 
 def to_hex (x : Array UInt32) := String.join (x.toList.map hex_u32)
@@ -165,7 +167,7 @@ def test_str := a_str ++ a_str
 
 
 def sha256 (msg : List Nat) : Atom :=
-  let u32s := sha256_32 msg.toArray
+  let u32s := sha256_32 (msg.toArray.map UInt8.ofNat)
   let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
   let s: List UInt8 := r.join
   let sn: List Nat := s.map UInt8.toNat

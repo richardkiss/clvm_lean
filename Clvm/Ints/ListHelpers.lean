@@ -22,9 +22,6 @@ def is_msb_set (as : List Nat) :=
   | v :: _ => v &&& 128 = 128
 
 
-#eval is_msb_clear [0, 0, 0, 0]
-
-
 theorem is_msb_clear_nonempty {as: List Nat}: is_msb_clear as → nonempty as := by
   intro h
   cases as with

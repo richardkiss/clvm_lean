@@ -39,17 +39,15 @@ instance : Coe (List Int) Node where
   coe := node_list_to_node ∘ int_list_to_node_list
 
 
-def nat_list_to_int_list : List Nat → List Int
-  | [] => []
-  | x::xs => Int.ofNat x :: nat_list_to_int_list xs
+instance : Coe Int Node where
+  coe := λ n => Node.atom (int_to_atom n)
+
+
+def nat_list_to_int_list (ns: List Nat) := ns.map Int.ofNat
 
 
 instance : Coe (List Nat) Node where
   coe := node_list_to_node ∘ int_list_to_node_list ∘ nat_list_to_int_list
-
-
-instance : Coe String Node where
-  coe := h2n
 
 
 instance : Coe (List Int) Node where
@@ -58,3 +56,7 @@ instance : Coe (List Int) Node where
 
 instance : Coe (List Atom) Node where
   coe := node_list_to_node ∘ (List.map Node.atom)
+
+
+instance : CoeOut (List Nat) (List UInt8) where
+  coe := List.map UInt8.ofNat

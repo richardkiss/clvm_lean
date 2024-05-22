@@ -62,7 +62,7 @@ def bytes_to_atom (bytes: Array Nat) : Option DResult :=
       else
       if o <= MAX_SINGLE_BYTE then
         let new_bytes := bytes.extract 1 bytes.size
-        let node := Node.atom (bytes.extract 0 1)
+        let node := Node.atom (bytes.extract 0 1).toList
         let _proof := new_bytes.size < bytes.size
         some (DResult.mk new_bytes node)
       else
@@ -75,7 +75,7 @@ def bytes_to_atom (bytes: Array Nat) : Option DResult :=
           else
             let atom := bytes.extract atom_start_offset new_bytes_offset
             let new_bytes := bytes.extract new_bytes_offset bytes.size
-            some (DResult.mk new_bytes (Node.atom atom))
+            some (DResult.mk new_bytes (Node.atom atom.toList))
         else
           if o.land 0xe0 = 0xc0 then
             let atom_start_offset := 2
@@ -89,7 +89,7 @@ def bytes_to_atom (bytes: Array Nat) : Option DResult :=
               else
                 let atom := bytes.extract atom_start_offset new_bytes_offset
                 let new_bytes := bytes.extract new_bytes_offset bytes.size
-                some (DResult.mk new_bytes (Node.atom atom))
+                some (DResult.mk new_bytes (Node.atom atom.toList))
           else
             if o.land 0xf0 = 0xe0 then
               let atom_start_offset := 3
@@ -103,7 +103,7 @@ def bytes_to_atom (bytes: Array Nat) : Option DResult :=
                 else
                   let atom := bytes.extract atom_start_offset new_bytes_offset
                   let new_bytes := bytes.extract new_bytes_offset bytes.size
-                  some (DResult.mk new_bytes (Node.atom atom))
+                  some (DResult.mk new_bytes (Node.atom atom.toList))
             else
               none
 

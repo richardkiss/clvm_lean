@@ -92,7 +92,6 @@ def add_jacobian { curve : Curve } ( p1 p2 : JacobianPoint curve ) : JacobianPoi
         rw [hr_squared]
         sorry
 
-
       ⟨x3, y3, z3, h⟩
 
 

@@ -1,6 +1,5 @@
 import Clvm.Atom
 import Clvm.Result
--- import Clvm.Sha256
 
 import Init.Data.Nat.Div
 
@@ -11,11 +10,17 @@ inductive Node
   deriving Repr
 
 
-@[simp]
-def Node.nil := Node.atom (Atom.mk [] (by decide))
+instance Node.instOfNat : OfNat Node n where
+  ofNat := Node.atom (int_to_atom (Int.ofNat n))
+
 
 @[simp]
-def Node.one := Node.atom [1]
+def Node.nil : Node := Node.atom (Atom.mk [] (by decide))
+
+
+@[simp]
+def Node.one : Node := Node.atom (Atom.mk [1] (by decide))
+
 
 def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node Node :=
   if depth = 0 then
@@ -36,19 +41,21 @@ def node_at (p: Nat) (node: Node): Result Node Node := node_at_wdepth (p+1) p no
 
 
 /-
-def tree_hash_node (hash: Atom -> Bytes32) (node: Node): Bytes32 :=
+def tree_hash_node (hash: List Nat -> List Nat) (node: Node): List Nat :=
   let atom_prefix : Nat := 1
   let node_prefix : Nat := 2
-  let rec tree_aux (node: Node): Bytes32 :=
+  let rec tree_aux (node: Node): List Nat :=
     match node with
     | Node.atom a => hash (atom_prefix :: a)
-    | Node.pair a b => hash (node_prefix :: (tree_aux a.data ++ tree_aux b.data))
+    | Node.pair a b => hash (node_prefix :: (tree_aux a ++ tree_aux b))
   tree_aux node
+
+def tree_hash (node: Node) := tree_hash_node (λ d => d) node
+
+#check tree_hash
+#eval tree_hash (h2n "80")
 -/
 
--- def tree_hash (node: Node) := tree_hash_node sha256 node
-
--- #check tree_hash
 
 structure NodePath :=
   n : Nat
@@ -145,8 +152,11 @@ def nodepath_for_string (s: String) : NodePath :=
 instance : CoeOut String NodePath where
   coe := nodepath_for_string
 
-instance Node.instOfNat : OfNat Node n where
-  ofNat := Node.atom (int_to_atom (Int.ofNat n))
 
 instance : CoeOut Int Node where
   coe := Node.atom ∘ int_to_atom
+
+
+def is_atom (n: Node): Bool := match n with
+  | Node.atom _ => true
+  | _ => false

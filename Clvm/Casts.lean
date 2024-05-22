@@ -63,7 +63,6 @@ def node_to_list (args: Node) (cast: Node → Result α Node): Result (List α) 
     list_result_to_result_list step2
 
 
-
 def only_atoms (node: Node) (cast : Atom → α) : Result α Node :=
   match node with
   | Node.atom atom => Result.ok (cast atom)
@@ -71,9 +70,6 @@ def only_atoms (node: Node) (cast : Atom → α) : Result α Node :=
 
 
 def atom_to_int_cast (node: Node) : Result Int Node := only_atoms node atom_to_int
-
-
-def atom_to_nat_cast (node: Node) : Result Nat Node := only_atoms node atom_to_nat
 
 
 def node_to_bool (node: Node) : Result Bool Node :=
@@ -84,10 +80,6 @@ def node_to_bool (node: Node) : Result Bool Node :=
 
 def args_to_int (args: Node) : Result (List Int) Node :=
   node_to_list args atom_to_int_cast
-
-
-def args_to_nat (args: Node) : Result (List Nat) Node :=
-  node_to_list args atom_to_nat_cast
 
 
 def args_to_bool (args: Node) : Result (List Bool) Node :=
@@ -115,7 +107,6 @@ def atom_only_cast (n: Node) : Result Atom Node :=
 def nat_to_uint32 (n: Nat) : Result UInt32 Node :=
   if (UInt32.ofNat n).toNat = n then Result.ok (UInt32.ofNat n)
   else Result.err Node.nil "expected 4 bytes"
-
 
 
 def node_to_u32 (n: Node) : Result UInt32 Node :=

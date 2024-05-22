@@ -10,7 +10,7 @@
 
 import Mathlib
 
-import Clvm.ListHelpers
+import Clvm.Ints.ListHelpers
 
 
 @[simp]
@@ -62,7 +62,7 @@ lemma len_nat_to_base_b_be_partial {b: Nat} (hb: b>1): ∀ d, (∀ v, (nat_to_ba
     simp [ih]
 
 
-def base_b_be_to_nat_inner (acc: Nat) (ds: List Nat) (b: Nat)  : Nat :=
+def base_b_be_to_nat_inner (acc: Nat) (ds: List Nat) (b: Nat) : Nat :=
   match ds with
   | [] => acc
   | d0 :: tail => base_b_be_to_nat_inner (acc + d0 * b ^ tail.length) tail b

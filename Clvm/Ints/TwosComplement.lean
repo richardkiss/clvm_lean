@@ -1,9 +1,8 @@
 import Mathlib
 import Mathlib.Init.Set
 
-import Clvm.Bases
-import Clvm.Lemmas
-import Clvm.ListHelpers
+import Clvm.Ints.ListHelpers
+import Clvm.Ints.Bases
 
 
 def base_b_be_to_neg (digits: List Nat) (b: Nat) : Int :=
@@ -236,6 +235,7 @@ lemma round_trip_twos_comp_neg : z < 0 → twos_comp_to_int (int_to_twos_comp z)
     simp
 
 
+@[simp]
 theorem round_trip_twos_comp : twos_comp_to_int (int_to_twos_comp z) = z := by
   if h0: z = 0 then
     rw [h0]

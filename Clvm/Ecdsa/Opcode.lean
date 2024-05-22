@@ -9,20 +9,19 @@ import Init.Data.UInt
 import Init.Data.Fin
 import Init.Data.Nat
 
-import Clvm.Atom
 import Clvm.Ecdsa.Affine
 import Clvm.Ecdsa.Bls12381
 import Clvm.Ecdsa.Coe
 import Clvm.Ecdsa.Curve
 import Clvm.Ecdsa.Jacobian
 import Clvm.Ecdsa.Secp256k1
+import Clvm.Ints.Bases
 
 import Mathlib.Data.Nat.Prime
 import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Tactic.Ring
 
--- import Mathlib.Tactic.LibrarySearch
 import Mathlib.Tactic.FieldSimp
 
 
@@ -135,8 +134,8 @@ def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) 
         none
     else
       let x0 := bytes[0]!
-      let new_x_bytes : Atom := bytes.set 0 (x0 &&& 0b00011111)
-      let x : Nat := atom_to_nat new_x_bytes
+      let new_x_bytes : List Nat := bytes.set 0 (x0 &&& 0b00011111)
+      let x : Nat := base_b_be_to_nat new_x_bytes 256
       let x_mod : ZMod CurveBLS12381.p := x % CurveBLS12381.p
       let points := points_for_x x_mod
       let chosen_point: AffinePointNotInfinity CurveBLS12381 := (

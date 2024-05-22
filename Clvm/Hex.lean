@@ -14,13 +14,17 @@ def h2b (s: String) : Array Nat :=
   filtered.toArray
 
 
+
 def nat_to_hex (n : Nat) : String :=
   let hex_chars := "0123456789abcdef".toList
   let hex_digit (n : Nat) : Char :=
     if n < 16 then hex_chars.get! n else 'X'
-
   String.mk ([hex_digit (n / 16), hex_digit (n % 16)])
 
 
 def b2h (bytes : Array Nat) : String :=
   String.join (bytes.toList.map (λ b => nat_to_hex b))
+
+
+def b2h_uint8 (bytes : Array UInt8) : String :=
+  b2h (bytes.map (λ b => b.toNat))

@@ -1,13 +1,11 @@
 import Clvm.Atom
 import Clvm.Casts
---import Clvm.Ecdsa.Basic
---import Clvm.Ecdsa.Bls12381
---import Clvm.Ecdsa.Jacobian
 import Clvm.Serde
 import Clvm.Sha256
 import Clvm.Result
 import Clvm.Util
 
+/-! sign-extend the given array to the given size -/
 def extend (a : Array UInt8) (size : Nat) : Array UInt8 :=
   let v : UInt8 := match a[0]? with
     | none => 0
@@ -15,6 +13,7 @@ def extend (a : Array UInt8) (size : Nat) : Array UInt8 :=
   (Array.mkArray (size - a.size) v) ++ a
 
 
+/-! extend the smaller array to the length of the larger array -/
 def equalize (a0 b0 : Array UInt8) : (Array UInt8 × Array UInt8) :=
   if a0.size < b0.size then
     (extend a0 b0.size, b0)
@@ -349,7 +348,7 @@ def handle_op_logand (args: Node) : Result Node Node :=
   match args_to_int args with
   | Result.err _ b => Result.err args b
   | Result.ok args =>
-      Result.ok (Node.atom (args.foldl (fun a b => land a b) #[255]))
+      Result.ok (Node.atom (args.foldl (fun a b => land a b) [255]))
 
 
 def handle_op_logior (args: Node) : Result Node Node :=
@@ -372,7 +371,7 @@ def handle_op_lognot (args: Node) : Result Node Node :=
     match a0 with
     | Node.atom v0 =>
       if v0.length = 0 then
-        Result.ok (Node.atom #[255])
+        Result.ok (Node.atom [255])
       else
         let v1 : Array UInt8 := lxor v0 (-1)
         Result.ok (Node.atom (int_to_atom (atom_to_int v1)))
