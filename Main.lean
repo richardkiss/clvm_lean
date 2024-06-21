@@ -10,7 +10,9 @@ def do_run (node : Node) : String :=
 
 
 def handle_hex (hex : String) : String :=
-  do_run (h2n hex)
+  match h2n hex with
+  | Result.ok node => do_run node
+  | Result.err _ _ => "!! bad hex"
 
 
 def main (args: List String) : IO UInt32 :=

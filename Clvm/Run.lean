@@ -142,7 +142,7 @@ def map_or_err (f: Node -> Result Node Node) (args: Node) : (Result Node Node) :
     | Result.err a msg => Result.err a msg
 
 
-#eval node_at (atom_to_nat [0x00, 0x02]) (h2n "ff7701")
+#eval node_at (atom_to_nat [0x00, 0x02]) (h2n! "ff7701")
 
 
 def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
@@ -181,20 +181,14 @@ def apply (program: Node) (args: Node) : Result Node Node :=
 def bruns_to (program: Node) (args: Node) (r: Node) := ∃ depth, apply_node depth program args = Result.ok r
 
 
-#eval apply "ff0101" "80"
-
-example : bruns_to "ff0101" "80" "01" := by
-  use 2
-  rfl
-
 
 #check apply my_quote my_quote
 -- #eval show_result (apply my_quote my_quote)
 
 
-def rh (hex: String) : String := show_result (apply (h2n hex) (h2n "00"))
+def rh (hex: String) : String := show_result (apply (h2n! hex) (h2n! "00"))
 
-def my_tree: Node := h2n "ff8474686973ff826973ffff02847465737480"
+def my_tree: Node := h2n! "ff8474686973ff826973ffff02847465737480"
 
 #eval (n2h my_tree)
 #eval show_result (apply (Node.atom [11]) my_tree)

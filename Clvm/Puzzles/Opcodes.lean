@@ -25,7 +25,7 @@ import Std.Data.UInt
 
 -- we have here several theorems about running programs
 
-def quote_one : Node := h2n "ff0101"
+def quote_one : Node := h2n! "ff0101"
 
 
 -- n is a node. We have (a (q . n) 0) => n
