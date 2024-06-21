@@ -26,7 +26,7 @@ def h2n! (hex: String) : Node :=
 
 
 @[simp]
-def h2n_partial (hex: String) : Result DResult String :=
+def h2n_partial (hex: String) : Result ParsedNode String :=
   match h2b_list hex with
   | Result.ok bytes =>
     match bytes_to_node_inner hex.length bytes with

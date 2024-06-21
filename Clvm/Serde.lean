@@ -10,6 +10,11 @@ def my_panic :=
   t[1]!
 -/
 
+structure ParsedNode where
+  node: Node
+  bytes: List Nat
+
+
 def atom_to_serialized_bytes (atom : List Nat) : List Nat :=
   let size: Nat := atom.length
   if size == 0 then
@@ -47,27 +52,22 @@ def n2h (n : Node) : String :=
   b2h (node_to_bytes n)
 
 
-structure DResult where
-  bytes: List Nat
-  node: Node
-
-
 def List.extract (as: List α) (start finish: Nat) : List α :=
   as.drop start |>.take (finish - start)
 
 
-def bytes_to_atom (bytes: List Nat) : Option DResult :=
+def bytes_to_atom (bytes: List Nat) : Option ParsedNode :=
   match bytes with
   | [] => none
   | o :: rest =>
       if o = 0x80 then
-        some (DResult.mk rest (Node.nil))
+        some (ParsedNode.mk (Node.nil) rest)
       else
       if o <= MAX_SINGLE_BYTE then
         let new_bytes := rest
         let node := Node.atom [o]
         let _proof := rest.length < bytes.length
-        some (DResult.mk new_bytes node)
+        some (ParsedNode.mk node new_bytes)
       else
         if o.land 0xc0 = 0x80 then
           let atom_size := (o.land 0x3f)
@@ -79,7 +79,7 @@ def bytes_to_atom (bytes: List Nat) : Option DResult :=
             -- generate sublist
             let atom := bytes.extract atom_start_offset new_bytes_offset
             let new_bytes := bytes.extract new_bytes_offset bytes.length
-            some (DResult.mk new_bytes (Node.atom atom))
+            some (ParsedNode.mk (Node.atom atom) new_bytes)
         else
           if o.land 0xe0 = 0xc0 then
             let atom_start_offset := 2
@@ -93,7 +93,7 @@ def bytes_to_atom (bytes: List Nat) : Option DResult :=
               else
                 let atom := bytes.extract atom_start_offset new_bytes_offset
                 let new_bytes := bytes.extract new_bytes_offset bytes.length
-                some (DResult.mk new_bytes (Node.atom atom))
+                some (ParsedNode.mk (Node.atom atom) new_bytes)
           else
             if o.land 0xf0 = 0xe0 then
               let atom_start_offset := 3
@@ -107,13 +107,13 @@ def bytes_to_atom (bytes: List Nat) : Option DResult :=
                 else
                   let atom := bytes.extract atom_start_offset new_bytes_offset
                   let new_bytes := bytes.extract new_bytes_offset bytes.length
-                  some (DResult.mk new_bytes (Node.atom atom))
+                  some (ParsedNode.mk (Node.atom atom) new_bytes)
             else
               none
 
 
 
-def bytes_to_node_inner (heartbeat_count: Nat) (bytes: List Nat) : Result DResult (List Nat) :=
+def bytes_to_node_inner (heartbeat_count: Nat) (bytes: List Nat) : Result ParsedNode (List Nat) :=
   if heartbeat_count = 0 then
     Result.err [] "heartbeat_count is 0"
   else
@@ -127,7 +127,7 @@ def bytes_to_node_inner (heartbeat_count: Nat) (bytes: List Nat) : Result DResul
           match bytes_to_node_inner new_count left.bytes with
           | Result.ok right =>
               let node := Node.pair left.node right.node
-              Result.ok (DResult.mk right.bytes node)
+              Result.ok (ParsedNode.mk node right.bytes)
           | _other => _other
         | _other => _other
       else
