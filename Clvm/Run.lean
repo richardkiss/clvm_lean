@@ -1,7 +1,7 @@
 import Clvm.Node
 import Clvm.Opcodes
-import Clvm.Result
 import Clvm.Serde
+import Clvm.Sha256
 import Clvm.Util
 
 
@@ -46,12 +46,13 @@ def OP_ALL := 0x22
 def OP_SOFTFORK := 0x24
 
 
-def handle_unused (_args: Node) : Result Node Node :=
-  Result.ok Node.nil
+
+def handle_unused (_args: Node) : Except (Node × String) Node :=
+  Except.ok Node.nil
 
 
 
-def OP_ARRAY: Array (Node → Result Node Node) := #[
+def OP_ARRAY: Array (Node → Except (Node × String) Node) := #[
   handle_unused, handle_unused, handle_unused, handle_op_i, -- 0 to 3
   handle_op_c, handle_op_f, handle_op_r, handle_op_l, -- 4 to 7
   handle_op_x, handle_op_eq, handle_op_gt_s, handle_op_sha256, -- 8 to 0x0b
@@ -81,7 +82,7 @@ def node_map (f: Node -> Node): Node -> Node :=
   inner_func
 
 
-def handle_opcode (byte: Nat) (args: Node) : Result Node Node :=
+def handle_opcode (byte: Nat) (args: Node) : Except (Node × String) Node :=
   let f:= match byte with
   | 0x03 => handle_op_i
   | 0x04 => handle_op_c
@@ -116,38 +117,38 @@ def handle_opcode (byte: Nat) (args: Node) : Result Node Node :=
   f args
 
 
-def handle_opcode_for_atom (a: Atom) (args: Node) : Result Node Node :=
+def handle_opcode_for_atom (a: Atom) (args: Node) : Except (Node × String) Node :=
   match a.data with
   | [byte] => handle_opcode byte args
   | _ => handle_unused args
 
 
-def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Result Node Node :=
+def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: Node) (program : Node): Except (Node × String) Node :=
   match opcode, should_be_nil with
   | Node.atom opcode_atom, Node.atom ⟨ [], _ ⟩  =>
     match opcode_atom.data with
     | [byte] => handle_opcode byte operand_list
-    | _ => Result.err program "invalid operator"
-  | _, _ => Result.err program "in ((X)...) syntax X must be lone atom"
+    | _ => Except.err program "invalid operator"
+  | _, _ => Except.err program "in ((X)...) syntax X must be lone atom"
 
 
-def map_or_err (f: Node -> Result Node Node) (args: Node) : (Result Node Node) :=
+def map_or_err (f: Node -> Except (Node × String) Node) (args: Node) : (Except (Node × String) Node) :=
   match args with
-  | Node.atom ⟨ _, _ ⟩  => Result.ok Node.nil
+  | Node.atom ⟨ _, _ ⟩  => Except.ok Node.nil
   | Node.pair n1 n2 => match map_or_err f n2 with
-    | Result.ok r2 =>
+    | Except.ok r2 =>
       match f n1 with
-      | Result.ok r1 => Result.ok (Node.pair r1 r2)
+      | Except.ok r1 => Except.ok (Node.pair r1 r2)
       | _other => _other
-    | Result.err a msg => Result.err a msg
+    | Except.error e => Except.error e
 
 
 #eval node_at (atom_to_nat [0x00, 0x02]) (h2n! "ff7701")
 
 
-def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
+def apply_node (depth: Nat) (program: Node) (args: Node) : Except (Node × String) Node :=
   if depth = 0 then
-    Result.err program "depth 0"
+    Except.err program "depth 0"
   else
     match program with
     | Node.atom atom => node_at (atom_to_nat atom) args
@@ -155,17 +156,17 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Result Node Node :=
       | Node.pair inner_opcode should_be_nil => apply_cons_mode_syntax inner_opcode should_be_nil arguments program
       | Node.atom atom =>
           if atom.data = [OP_Q] then
-            Result.ok arguments
+            Except.ok arguments
           else
             match map_or_err (fun node => apply_node (depth-1) node args) arguments with
-            | Result.ok eval_args =>
+            | Except.ok eval_args =>
                 if atom.data = [OP_A] then
                     match eval_args with
                     | Node.pair program (Node.pair args (Node.atom ⟨ [], _ ⟩ )) => apply_node (depth-1) program args
-                    | _ => Result.err eval_args "apply requires exactly 2 parameters"
+                    | _ => Except.err eval_args "apply requires exactly 2 parameters"
                 else
                   handle_opcode_for_atom atom eval_args
-            | Result.err arg msg => Result.err arg msg
+            | Except.error e => Except.error e
 
 
 def my_quote: Node := Node.pair (Node.atom [0x01]) (Node.atom [2, 3, 4])
@@ -174,24 +175,24 @@ def my_quote: Node := Node.pair (Node.atom [0x01]) (Node.atom [2, 3, 4])
 #check my_quote
 #eval n2h my_quote
 
-def apply (program: Node) (args: Node) : Result Node Node :=
+def apply (program: Node) (args: Node) : Except (Node × String) Node :=
   apply_node 100 program args
 
 
-def bruns_to (program: Node) (args: Node) (r: Node) := ∃ depth, apply_node depth program args = Result.ok r
+def bruns_to (program: Node) (args: Node) (r: Node) := ∃ depth, apply_node depth program args = Except.ok r
 
 
 
 #check apply my_quote my_quote
--- #eval show_result (apply my_quote my_quote)
+-- #eval show_Except (apply my_quote my_quote)
 
 
-def rh (hex: String) : String := show_result (apply (h2n! hex) (h2n! "00"))
+def rh (hex: String) : String := toString (apply (h2n! hex) (h2n! "00"))
 
 def my_tree: Node := h2n! "ff8474686973ff826973ffff02847465737480"
 
 #eval (n2h my_tree)
-#eval show_result (apply (Node.atom [11]) my_tree)
+#eval toString (apply (Node.atom [11]) my_tree)
 
 #eval rh "ff14ffff010affff010380"
 
@@ -199,7 +200,7 @@ def my_tree: Node := h2n! "ff8474686973ff826973ffff02847465737480"
 ---
 
 @[simp]
-def operator_program (depth opcode: Nat) (args env: Node) : Result Node Node := apply_node depth (Node.pair (Node.atom [opcode]) args) env
+def operator_program (depth opcode: Nat) (args env: Node) : Except (Node × String) Node := apply_node depth (Node.pair (Node.atom [opcode]) args) env
 
 
 theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
@@ -207,7 +208,7 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
   {h_opcode: opcode ≤ 255}
   {h_not_q: opcode ≠ OP_Q}
   {h_not_a: opcode ≠ OP_A}
-  (h_map_or_err: (map_or_err (fun node => apply_node (depth-1) node env) args = Result.ok new_args)) :
+  (h_map_or_err: (map_or_err (fun node => apply_node (depth-1) node env) args = Except.ok new_args)) :
     operator_program depth opcode args env = handle_opcode opcode new_args := by
   simp [apply_node]
   simp [h_depth]
@@ -219,14 +220,14 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
   rw [h_map_or_err]
 
 
-#eval map_or_err (fun node => apply_node 99 node 10) [1]
+#eval map_or_err (fun node => apply_node 99 node 10) (Node.atom (Atom.to [1]))
 
 
 lemma int_to_atom_nil: (int_to_atom 0).data = [] := by rfl
 
 
-theorem run_add_one_number {z: Int}: operator_program 100 OP_ADD [1] z = Result.ok (z: Node) := by
-  have h_map_or_err: map_or_err (fun node => apply_node 99 node z) [1] = Result.ok (Node.pair z 0) := by rfl
+theorem run_add_one_number {z: Int}: operator_program 100 OP_ADD [1] z = Except.ok (z: Node) := by
+  have h_map_or_err: map_or_err (fun node => apply_node 99 node z) [1] = Except.ok (Node.pair z 0) := by rfl
 
   have zz: operator_program 100 OP_ADD [1] z = handle_opcode OP_ADD (Node.pair z 0) := by
     rw [not_quote_or_atom]
@@ -247,4 +248,4 @@ theorem run_add_one_number {z: Int}: operator_program 100 OP_ADD [1] z = Result.
   simp [int_to_atom_nil]
   simp [atom_to_int_cast]
   simp [only_atoms]
-  simp [list_result_to_result_list]
+  simp [list_except_to_except_list]

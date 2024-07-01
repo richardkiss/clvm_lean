@@ -4,7 +4,6 @@ import Clvm.Coe
 import Clvm.Node
 import Clvm.Hex
 import Clvm.Puzzles.Basic
-import Clvm.Result
 import Clvm.Run
 import Clvm.Serde
 import Clvm.Ints.Basic

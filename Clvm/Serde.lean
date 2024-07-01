@@ -112,41 +112,35 @@ def bytes_to_atom (bytes: List Nat) : Option ParsedNode :=
               none
 
 
-def bytes_to_parsed_node (bytes: List Nat) : Result ParsedNode (List Nat) :=
+def bytes_to_parsed_node (bytes: List Nat) : Except ((List Nat) × String) ParsedNode :=
   match bytes with
-  | [] => Result.err bytes "end of stream"
+  | [] => Except.err bytes "end of stream"
   | o :: rest=>
     if o = 255 then
-      match bytes_to_parsed_node rest with
-      | Result.ok left =>
-        have: List.length left.bytes < Nat.succ (List.length rest) := by
-          sorry
-        match bytes_to_parsed_node left.bytes with
-        | Result.ok right =>
-            let node := Node.pair left.node right.node
-            Result.ok (ParsedNode.mk node right.bytes)
-        | _other => _other
-      | _other => _other
+      do
+      let left ← bytes_to_parsed_node rest
+      have: List.length left.bytes < Nat.succ (List.length rest) := by
+        sorry
+      let right ← bytes_to_parsed_node left.bytes
+      return ParsedNode.mk (Node.pair left.node right.node) right.bytes
     else
       match bytes_to_atom bytes with
-      | none => Result.err bytes "end of stream"
-      | some result => Result.ok result
+      | none => Except.err bytes "end of stream"
+      | some result => Except.ok result
   termination_by bytes.length
 
 
-def bytes_to_node (bytes: List Nat) : Result Node (List Nat) :=
-  match bytes_to_parsed_node bytes with
-  | Result.ok result => Result.ok result.node
-  | Result.err msg bytes => Result.err msg bytes
+def bytes_to_node (bytes: List Nat) : Except ((List Nat) × String) Node := do
+  let result ← bytes_to_parsed_node bytes
+  return result.node
 
 
-def skip_node (bytes: List Nat) : Result (List Nat) (List Nat) :=
-  match bytes_to_parsed_node bytes with
-  | Result.ok result => Result.ok result.bytes
-  | Result.err msg bytes => Result.err msg bytes
+def skip_node (bytes: List Nat) : Except ((List Nat) × String) (List Nat) := do
+  let result ← bytes_to_parsed_node bytes
+  return result.bytes
 
 
 def skip_node! (bytes: List Nat) : List Nat :=
   match bytes_to_parsed_node bytes with
-  | Result.ok result => result.bytes
-  | Result.err _ _ => []
+  | Except.ok result => result.bytes
+  | Except.error _ => []

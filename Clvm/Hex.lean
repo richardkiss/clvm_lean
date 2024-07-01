@@ -1,53 +1,62 @@
 import Mathlib.Tactic.ByContra
 import Mathlib.Tactic.Use
 
+import Std.Tactic.Basic
 
-def hex_nibble_to_byte (c: Char) : Result Nat Char :=
+-- import Clvm.Serde
+
+def Except.err {α β : Type} (e: β) (s: String) : Except (β × String) α := Except.error ⟨ e, s ⟩
+
+
+def is_ok {α β : Type} (e: Except α β) := ∃ a, e = Except.ok a
+
+
+theorem not_ok {α β : Type} {e: Except α β} (h: ¬ is_ok e) : ∃ a, e = Except.error a := by
+  induction e with
+  | ok a => simp [is_ok] at h
+  | error a => use a
+
+
+def hex_nibble_to_byte (c: Char) : Except (Char × String) Nat :=
   let c := c.toLower
   if c.toNat >= 48 && c.toNat <= 57 then
-    Result.ok (c.toNat - 48)
+    Except.ok (c.toNat - 48)
   else if c.toNat >= 97 && c.toNat <= 102 then
-    Result.ok (c.toNat - 87)
+    Except.ok (c.toNat - 87)
   else
-    Result.err c "invalid hex digit"
+    Except.err c "invalid hex digit"
 
 
-def hex_pair_to_byte (c1 c2: Char) : Result Nat Char :=
-  match hex_nibble_to_byte c1, hex_nibble_to_byte c2 with
-  | Result.ok c1, Result.ok c2 => Result.ok (c1 * 16 + c2)
-  | Result.err c1 m1, _ => Result.err c1 m1
-  | _, Result.err c2 m2 => Result.err c2 m2
+def hex_pair_to_byte (c1 c2: Char) : Except (Char × String) Nat := do
+  let n1 ← hex_nibble_to_byte c1
+  let n2 ← hex_nibble_to_byte c2
+  Except.ok (n1 * 16 + n2)
 
 
-def h2b_lc (s: List Char) : Result (List Nat) (List Char) :=
+def h2b_lc (s: List Char) : Except (Char × String) (List Nat) :=
   match s with
-  | c1 :: c2 :: rest =>
-    match hex_pair_to_byte c1 c2, h2b_lc rest with
-    | Result.ok b, Result.ok r => Result.ok (b :: r)
-    | Result.err c e, _ => Result.err [c] e
-    | _, Result.err cs e => Result.err cs e
-  | [c] => Result.err [c] "odd number of hex digits"
-  | [] => Result.ok []
+  | c1 :: c2 :: rest => do
+    let b ← hex_pair_to_byte c1 c2
+    let r ← h2b_lc rest
+    Except.ok (b :: r)
+  | [c] => Except.err c "odd number of hex digits"
+  | [] => Except.ok []
 
 
 def h2b_lc! (s: List Char) : List Nat :=
   match h2b_lc s with
-  | Result.ok r => r
-  | Result.err _ _ => []
+  | Except.ok r => r
+  | Except.error _ => []
 
 
 @[simp]
-def h2b (s: String) : Result (List Nat) String :=
-  match h2b_lc s.data with
-  | Result.ok r => Result.ok r
-  | Result.err c e => Result.err (String.mk c) e
+def h2b (s: String) := h2b_lc s.data
 
 
 def h2b! (s: String) : List Nat :=
   match h2b s with
-  | Result.ok r => r
-  | Result.err _ _ => []
-
+  | Except.ok r => r
+  | Except.error _ => []
 
 
 def nat_to_hex (n : Nat) : String :=
@@ -77,24 +86,26 @@ theorem h2b_lc_remove_two_chars_helper: is_ok (h2b_lc ([c0, c1] ++ s)) →
   simp at h0
   have p0: is_ok (hex_pair_to_byte c0 c1) := by
     by_contra h1
-    obtain ⟨c, s0, h2⟩ := not_ok h1
-    simp [h2] at h0
+    obtain ⟨c, h2⟩ := not_ok h1
+    simp [bind, Except.bind, h2] at h0
+
   simp [p0]
   obtain ⟨n0, hn0⟩ := p0
   rw [hn0] at h0
   have p1: is_ok (h2b_lc s) := by
     by_contra h1
-    obtain ⟨c, s0, h2⟩ := not_ok h1
-    simp [h2] at h0
+    obtain ⟨c, h2⟩ := not_ok h1
+    simp [bind, Except.bind, h2] at h0
   exact p1
 
 
-theorem h2b_lc_remove_two_chars: is_ok (h2b_lc ([c0, c1] ++ s)) → h2b_lc ([c0, c1] ++ s) = Result.ok (h2b_lc! ([c0, c1]) ++ h2b_lc! s) := by
+
+theorem h2b_lc_remove_two_chars: is_ok (h2b_lc ([c0, c1] ++ s)) → h2b_lc ([c0, c1] ++ s) = Except.ok (h2b_lc! ([c0, c1]) ++ h2b_lc! s) := by
   intro h0
   obtain ⟨ p0, p1 ⟩ := h2b_lc_remove_two_chars_helper h0
   obtain ⟨ns0, hn0⟩ := p0
   obtain ⟨ns1, hn1⟩ := p1
-  simp [h2b_lc, h2b_lc!, hn0, hn1, h2b_lc]
+  simp [h2b_lc, h2b_lc!, hn0, hn1, h2b_lc, bind, Except.bind]
 
 
 theorem take_drop (s : List α) (n: Nat): s = (s.take n) ++ (s.drop n) := by simp [List.take, List.drop]
@@ -110,7 +121,7 @@ theorem prefix_len_2 (s: List α) : s.length ≥ 2 → ∃ c0 c1 r, s = [c0, c1]
     | cons c1 s1 => simp [List.length] at h_len ; simp
 
 
-theorem h2b_lc_take_drop: is_ok (h2b_lc s) → s.length ≥ 2 → h2b_lc s = Result.ok (h2b_lc! (s.take 2) ++ h2b_lc! (s.drop 2)) := by
+theorem h2b_lc_take_drop: is_ok (h2b_lc s) → s.length ≥ 2 → h2b_lc s = Except.ok (h2b_lc! (s.take 2) ++ h2b_lc! (s.drop 2)) := by
   intro h0
   intro h_len
 
@@ -124,7 +135,7 @@ theorem h2b_lc_take_drop: is_ok (h2b_lc s) → s.length ≥ 2 → h2b_lc s = Res
 theorem h2b_lc_ok : is_ok (h2b s) → is_ok (h2b_lc s.data) := by
   intro h
   by_contra h1
-  obtain ⟨c, s0, h2⟩ := not_ok h1
+  obtain ⟨c, h2⟩ := not_ok h1
   simp [h2, is_ok] at h
 
 
@@ -134,13 +145,13 @@ theorem h2b_eq_lc : is_ok (h2b s) → h2b! s = h2b_lc! s.data := by
   simp [h2b_lc!, h2b!, h2b, h1]
 
 
-theorem h2b_eq_! : is_ok (h2b s) → h2b s = Result.ok (h2b! s) := by
+theorem h2b_eq_! : is_ok (h2b s) → h2b s = Except.ok (h2b! s) := by
   intro h
   obtain ⟨ns, h1⟩ := h2b_lc_ok h
   simp [h2b_lc!, h2b!, h2b, h1]
 
 
-theorem h2b_lc_eq_! : is_ok (h2b s) → h2b_lc s.data = Result.ok (h2b_lc! s.data) := by
+theorem h2b_lc_eq_! : is_ok (h2b s) → h2b_lc s.data = Except.ok (h2b_lc! s.data) := by
   intro h
   obtain ⟨ns, h1⟩ := h2b_lc_ok h
   simp [h2b_lc!, h2b!, h2b, h1]

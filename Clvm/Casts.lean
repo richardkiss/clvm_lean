@@ -1,31 +1,22 @@
+import Clvm.Hex
 import Clvm.Node
 import Clvm.Ecdsa.Basic
 import Clvm.Ecdsa.Bls12381
 import Clvm.Ecdsa.Opcode
 
 
-
-def node_to_list_1 (args: Node) (cast: Node → Result α Node): Result (List α) Node :=
+def node_to_list_1 (args: Node) (cast: Node → Except (Node × String) α): Except (Node × String) (List α) :=
   match args with
-  | Node.atom { data := [], lt := _ } => Result.ok []
+  | Node.atom { data := [], lt := _ } => Except.ok []
   | Node.pair first rest => match cast first with
-    | Result.err a b => Result.err a b
-    | Result.ok v => match node_to_list_1 rest cast with
-      | Result.err a b => Result.err a b
-      | Result.ok rest => Result.ok (v :: rest)
-  | _ => Result.err args "unexpected terminator"
+    | Except.error a => Except.error a
+    | Except.ok v => match node_to_list_1 rest cast with
+      | Except.error ⟨ a, b ⟩  => Except.error ⟨ a, b ⟩
+      | Except.ok rest => Except.ok (v :: rest)
+  | _ => Except.err args "unexpected terminator"
 
 
-
-def node_to_list_int (args: Node) (cast: Node → Result Int Node): Result (List Int) Node :=
-  match args with
-  | Node.atom { data := [], lt := _ } => Result.ok []
-  | Node.pair first rest => match cast first with
-    | Result.err a b => Result.err a b
-    | Result.ok v => match node_to_list_1 rest cast with
-      | Result.err a b => Result.err a b
-      | Result.ok rest => Result.ok (v :: rest)
-  | _ => Result.err args "unexpected terminator"
+def node_to_list_int (args: Node) (cast: Node → Except (Node × String) Int): Except (Node × String) (List Int) := node_to_list_1 args cast
 
 
 def node_to_node_list_terminator (args: Node) : (List Node) × (List Nat) :=
@@ -36,109 +27,109 @@ def node_to_node_list_terminator (args: Node) : (List Node) × (List Nat) :=
     ⟨first :: rest, terminator⟩
 
 
-def node_to_node_list (args: Node) : Result (List Node) Node :=
+def node_to_node_list (args: Node) : Except (Node × String) (List Node) :=
   let r := node_to_node_list_terminator args
   match r with
-  | (l, []) => Result.ok l
-  | _ => Result.err args "unexpected terminator"
+  | (l, []) => Except.ok l
+  | _ => Except.err args "unexpected terminator"
 
 
-def list_result_to_result_list (args: List (Result α Node)): Result (List α) Node :=
+def list_except_to_except_list (args: List (Except (Node × String) α)): Except (Node × String) (List α) :=
   match args with
-  | [] => Result.ok []
-  | (Result.err obj msg) :: _ => Result.err obj msg
-  | (Result.ok v) :: rest => match list_result_to_result_list rest with
-    | Result.err obj msg => Result.err obj msg
-    | Result.ok rest => Result.ok (v :: rest)
+  | [] => Except.ok []
+  | Except.error ⟨ obj, msg ⟩ :: _ => Except.err obj msg
+  | (Except.ok v) :: rest => match list_except_to_except_list rest with
+    | Except.error ⟨ obj, msg ⟩ => Except.err obj msg
+    | Except.ok rest => Except.ok (v :: rest)
 
 
-def node_to_list (args: Node) (cast: Node → Result α Node): Result (List α) Node:=
+def node_to_list (args: Node) (cast: Node → Except (Node × String) α): Except (Node × String) (List α) :=
   let step1 : List Node × List Nat := node_to_node_list_terminator args
   -- need to prove that right node is nil
   if step1.2.length > 0 then
-    Result.err args "unexpected terminator"
+    Except.err args "unexpected terminator"
   else
-    let step2 : List (Result α Node) := step1.1.map cast
+    let step2 : List (Except (Node × String) α) := step1.1.map cast
     -- need to prove that all casts "succeed"
-    list_result_to_result_list step2
+    list_except_to_except_list step2
 
 
-def only_atoms (node: Node) (cast : Atom → α) : Result α Node :=
+def only_atoms (node: Node) (cast : Atom → α) : Except (Node × String) α :=
   match node with
-  | Node.atom atom => Result.ok (cast atom)
-  | _ => Result.err node "expected atom"
+  | Node.atom atom => Except.ok (cast atom)
+  | _ => Except.err node "expected atom"
 
 
-def atom_to_int_cast (node: Node) : Result Int Node := only_atoms node atom_to_int
+def atom_to_int_cast (node: Node) : Except (Node × String) Int := only_atoms node atom_to_int
 
 
-def node_to_bool (node: Node) : Result Bool Node :=
+def node_to_bool (node: Node) : Except (Node × String) Bool :=
   match node with
-  | Node.atom atom => Result.ok (atom.length != 0)
-  | _ => Result.ok true
+  | Node.atom atom => Except.ok (atom.length != 0)
+  | _ => Except.ok true
 
 
-def args_to_int (args: Node) : Result (List Int) Node :=
+def args_to_int (args: Node) : Except (Node × String) (List Int) :=
   node_to_list args atom_to_int_cast
 
 
-def args_to_bool (args: Node) : Result (List Bool) Node :=
+def args_to_bool (args: Node) : Except (Node × String) (List Bool) :=
   node_to_list args node_to_bool
 
 
-def node_to_bls_point (node: Node) : Result (JacobianPoint CurveBLS12381) Node :=
+def node_to_bls_point (node: Node) : Except (Node × String) (JacobianPoint CurveBLS12381) :=
   match node with
   | Node.atom a => match deserialize_point a with
-    | none => Result.err node "point_add on list"
-    | some p => Result.ok p
-  | _ => Result.err node "point_add expects blob, got xx"
+    | none => Except.err node "point_add on list"
+    | some p => Except.ok p
+  | _ => Except.err node "point_add expects blob, got xx"
 
 
-def args_to_bls_points (args: Node) : Result (List (JacobianPoint CurveBLS12381)) Node :=
+def args_to_bls_points (args: Node) : Except (Node × String) (List (JacobianPoint CurveBLS12381)) :=
   node_to_list args node_to_bls_point
 
 
-def atom_only_cast (n: Node) : Result Atom Node :=
+def atom_only_cast (n: Node) : Except (Node × String) Atom :=
   match n with
-  | Node.atom a => Result.ok a
-  | _ => Result.err n "expected atom"
+  | Node.atom a => Except.ok a
+  | _ => Except.err n "expected atom"
 
 
-def nat_to_uint32 (n: Nat) : Result UInt32 Node :=
-  if (UInt32.ofNat n).toNat = n then Result.ok (UInt32.ofNat n)
-  else Result.err Node.nil "expected 4 bytes"
+def nat_to_uint32 (n: Nat) : Except (Node × String) UInt32 :=
+  if (UInt32.ofNat n).toNat = n then Except.ok (UInt32.ofNat n)
+  else Except.err Node.nil "expected 4 bytes"
 
 
-def node_to_u32 (n: Node) : Result UInt32 Node :=
+def node_to_u32 (n: Node) : Except (Node × String) UInt32 :=
   match atom_only_cast n with
-  | Result.ok a => match nat_to_uint32 (atom_to_nat a) with
-    | Result.ok v => Result.ok v
-    | Result.err a b => Result.err a b
-  | Result.err a b => Result.err a b
+  | Except.ok a => match nat_to_uint32 (atom_to_nat a) with
+    | Except.ok v => Except.ok v
+    | Except.error a => Except.error a
+  | Except.error a => Except.error a
 
 
-def atom_to_u32 (atom: Array UInt8) : Result UInt32 Node :=
+def atom_to_u32 (atom: Array UInt8) : Except (Node × String) UInt32 :=
   match nat_to_uint32 (atom_to_nat atom) with
-  | Result.ok v => Result.ok v
-  | Result.err a b => Result.err a b
+  | Except.ok v => Except.ok v
+  | Except.error e => Except.error e
 
 
-def atom_to_shift_int (op: String) (atom: Array UInt8) : Result Int Node :=
+def atom_to_shift_int (op: String) (atom: Array UInt8) : Except (Node × String) Int :=
   if atom.size > 4 then
-    Result.err (Node.atom atom) (op ++ " requires int32 args (with no leading zeros)")
+    Except.err (Node.atom atom) (op ++ " requires int32 args (with no leading zeros)")
   else
     let as_int := atom_to_int atom
     if as_int.natAbs > 65535 then
-      Result.err (Node.atom atom) "shift too large"
+      Except.err (Node.atom atom) "shift too large"
     else
-      Result.ok as_int
+      Except.ok as_int
 
 
-def node_as_int32 (op_name: String) (node: Node) : Result Int Node :=
+def node_as_int32 (op_name: String) (node: Node) : Except (Node × String) Int :=
   match node with
   | Node.atom a =>
         if a.length > 4 then
-          Result.err node (op_name ++ " requires int32 args (with no leading zeros)")
+          Except.err node (op_name ++ " requires int32 args (with no leading zeros)")
         else
-          Result.ok (atom_to_int a)
-  | _ => Result.err node (op_name ++ " requires int32 args")
+          Except.ok (atom_to_int a)
+  | _ => Except.err node (op_name ++ " requires int32 args")

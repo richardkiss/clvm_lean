@@ -5,7 +5,6 @@
 
 import Clvm.Atom
 import Clvm.Coe
-import Clvm.Hex
 
 
 structure Sha256_state :=
@@ -164,6 +163,13 @@ def a_str : Array UInt8 := #[106, 117, 115, 116, 32, 97, 32, 116, 101, 115, 116,
 def test_str := a_str ++ a_str
 
 #eval ((sha256_32 test_str).map hex_u32)
+
+
+def sha256_bytes (msg : List Nat) : List Nat :=
+  let u32s := sha256_32 (msg.toArray.map UInt8.ofNat)
+  let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
+  let s: List UInt8 := r.join
+  s.map UInt8.toNat
 
 
 def sha256 (msg : List Nat) : Atom :=

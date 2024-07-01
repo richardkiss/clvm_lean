@@ -1,6 +1,5 @@
 import Mathlib
 
-import Clvm.Result
 import Clvm.Run
 
 

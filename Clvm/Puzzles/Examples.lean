@@ -22,7 +22,7 @@ def Q1 : Node := Node.pair 1 1
 
 
 -- n is a node. We have (a (q . n) 0) => n
-example { n: Node } : apply (Node.pair 1 n) Node.nil = Result.ok n := by rfl
+example { n: Node } : apply (Node.pair 1 n) Node.nil = Except.ok n := by rfl
 
 
 -- (q . 1).replace("r", n) => (1 . n)
@@ -66,12 +66,8 @@ example { x y: Node } : bruns_to [OP_F, 1] (Node.pair x y) x := by use 2; rfl
 example { x y: Node } : bruns_to [OP_R, 1] (Node.pair x y) y := by use 2; rfl
 
 
-def is_atom (n: Node): Bool := match n with
-  | Node.atom _ => true
-  | _ => false
-
 -- (l n) => 0 or 1 depending on whether n is an atom
-example { x: Node } : handle_op_l [x] = Result.ok (if is_atom x then Node.nil else Node.one) := by
+example { x: Node } : handle_op_l [x] = Except.ok (if is_atom x then Node.nil else Node.one) := by
   cases x <;> rfl
 
 -- brun (l 1) x => 0 or 1
@@ -102,24 +98,24 @@ example { z0 z1 : Int } : (int_list_to_node_list [z0, z1]) = [Node.atom (int_to_
 
 -- we use `node_to_list` a lot in handle_op_xxx so let's prove it works right
 
-def identity (n: Node) : Result Node Node := Result.ok n
+def identity (n: Node) : Except (Node × String) Node := Except.ok n
 
-example : node_to_list Node.nil identity = Result.ok [] := by
+example : node_to_list Node.nil identity = Except.ok [] := by
   rfl
 
 -- node_to_list works on a single atom
-example (n: Node) : node_to_list (Node.pair n Node.nil) identity = Result.ok [n] := by
+example (n: Node) : node_to_list (Node.pair n Node.nil) identity = Except.ok [n] := by
   rfl
 
 -- node_to_list works on two atoms
-example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) identity = Result.ok [n1, n2] := by
+example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) identity = Except.ok [n1, n2] := by
   rfl
 
 
-def atoms_only (n: Node) : Result Node Node :=
+def atoms_only (n: Node) : Except (Node × String) Node :=
   match n with
-  | Node.atom _ => Result.ok n
-  | _ => Result.err n "not an atom"
+  | Node.atom _ => Except.ok n
+  | _ => Except.err n "not an atom"
 
 
 -- define "rightmost_node" as the atom we hit when we repeatedly go to the right
@@ -151,7 +147,7 @@ example { n1 n2 : Node } : right_depth (Node.pair n1 n2) = 1 + right_depth n2 :=
   cases n2 <;> rfl
 
 -- prove `node_to_list` works on nil
-example : node_to_list Node.nil atoms_only = Result.ok [] := by
+example : node_to_list Node.nil atoms_only = Except.ok [] := by
   rfl
 
 -- define a new property : "is_nil_terminated_list" which is true if the rightmost node is nil
@@ -166,7 +162,7 @@ example : node_to_list Node.nil atoms_only = Result.ok [] := by
 
 -- (l n) => 0 or 1 depending on whether n is an atom
 
-theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Result.ok (Node.atom (sha256 a.data)) := by
+theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Except.ok (Node.atom (sha256 a.data)) := by
   rfl
 
 
@@ -189,7 +185,7 @@ example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
 
 
 
-theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Result.ok zs := by
+theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by
   induction zs with
   | nil => rfl
   | cons z zs ih =>
@@ -217,7 +213,7 @@ theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘
     simp [zzz]
     unfold node_to_node_list_terminator
     unfold List.map
-    unfold list_result_to_result_list
+    unfold list_except_to_except_list
     simp [atom_to_int_cast]
     unfold only_atoms
     simp
@@ -248,10 +244,10 @@ theorem run_sha256_three_atoms { a1 a2 a3: Atom } : bruns_to [OP_SHA256, 2, 5, 1
   use 2 ; rfl
 
 
-theorem op_add_nil : handle_op_add Node.nil = Result.ok 0 := by rfl
+theorem op_add_nil : handle_op_add Node.nil = Except.ok 0 := by rfl
 
 
-theorem op_add_n_numbers { zs : List Int } : handle_op_add zs = Result.ok (Node.atom (int_to_atom (zs.foldl (fun a b => (a + b)) 0))) := by
+theorem op_add_n_numbers { zs : List Int } : handle_op_add zs = Except.ok (Node.atom (int_to_atom (zs.foldl (fun a b => (a + b)) 0))) := by
   unfold handle_op_add
   rw [round_trip_int_cast]
 
@@ -269,15 +265,15 @@ def quoted_nodes (ns : List Node) : Node :=
 #eval quoted_nodes [1, 2, 3]
 
 
--- we can `map_or_err` a list of subprograms that apply, we end up with a list of results in the intuitive way. This provides a shortcut
-lemma map_or_err_good_subprograms {results subprograms: List Node}: map_or_err (fun n ↦ apply_node k n env) (node_list_to_node subprograms) = Result.ok (node_list_to_node results) := by
+-- we can `map_or_err` a list of subprograms that apply, we end up with a list of Excepts in the intuitive way. This provides a shortcut
+lemma map_or_err_good_subprograms {Excepts subprograms: List Node}: map_or_err (fun n ↦ apply_node k n env) (node_list_to_node subprograms) = Except.ok (node_list_to_node Excepts) := by
   sorry
 
 
 
 
 
-lemma map_or_err_to_quoted_nodes {hv: v > 0} { f: Node -> Result Node Node } { ns: List Node } : map_or_err (fun n => apply_node v n args) (quoted_nodes ns) = Result.ok (node_list_to_node ns) := by
+lemma map_or_err_to_quoted_nodes {hv: v > 0} { f: Node -> Except Node Node } { ns: List Node } : map_or_err (fun n => apply_node v n args) (quoted_nodes ns) = Except.ok (node_list_to_node ns) := by
   induction ns with
   | nil => rfl
   | cons head tail h_tail =>
@@ -291,11 +287,11 @@ lemma map_or_err_to_quoted_nodes {hv: v > 0} { f: Node -> Result Node Node } { n
     rfl
 
 
-theorem run_add_nil: apply ([OP_ADD, 0]: Node) (0: Node) = Result.ok 0 := by
+theorem run_add_nil: apply ([OP_ADD, 0]: Node) (0: Node) = Except.ok 0 := by
   rfl
 
 
-theorem run_add_one_number_old {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = Result.ok (z: Node) := by
+theorem run_add_one_number_old {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = Except.ok (z: Node) := by
   simp
   unfold OP_ADD
   simp [nat_list_to_int_list, int_list_to_node_list]
@@ -318,11 +314,11 @@ theorem run_add_one_number_old {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = R
   simp [handle_opcode]
 
   unfold handle_op_add
-  simp [List.foldl, args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  simp [List.foldl, args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list]
   simp [int_to_atom, int_to_twos_comp]
 
 
-theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]: Node) = Result.ok ((z1 + z2): Node) := by
+theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]: Node) = Except.ok ((z1 + z2): Node) := by
   simp
   unfold OP_ADD
   simp [nat_list_to_int_list, int_list_to_node_list]
@@ -348,11 +344,11 @@ theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]
 
   unfold List.foldl
 
-  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list]
+  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list]
   simp [List.length, int_to_atom, int_to_twos_comp]
 
 
-theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([((OP_ADD): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Result.ok ((z1 + z2): Node) := by
+theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([((OP_ADD): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Except.ok ((z1 + z2): Node) := by
   simp
   unfold OP_ADD
   simp [node_list_to_node]
@@ -374,13 +370,13 @@ theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([((OP_ADD): Node), (Node
 
   simp [handle_opcode]
   simp [handle_op_add]
-  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list, List.length]
+  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list, List.length]
 
 
 #print axioms run_add_two_quoted_numbers
 
 
-theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Result.ok ((z1 * z2): Node) := by
+theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Except.ok ((z1 * z2): Node) := by
   simp
   unfold OP_MUL
   simp [node_list_to_node]
@@ -402,7 +398,7 @@ theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL): Node), (Node
 
   simp [handle_opcode]
   simp [handle_op_mul]
-  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_result_to_result_list, List.length]
+  simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list, List.length]
 
 
 -- "node_applies" means "program does not fail when run for some deep enough depth"

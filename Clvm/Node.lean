@@ -1,5 +1,5 @@
 import Clvm.Atom
-import Clvm.Result
+import Clvm.Hex
 
 import Init.Data.Nat.Div
 
@@ -9,9 +9,22 @@ inductive Node
   | pair : Node → Node → Node
   deriving Repr
 
+def repr_node (n: Node) : String :=
+  match n with
+  | Node.atom a => b2h a.data
+  | Node.pair a b => s!"({repr_node a} . {repr_node b})"
+
+/-
+instance : Repr Node where
+  reprPrec (n : Node) (_ : Nat) := repr_node n
+-/
 
 instance Node.instOfNat : OfNat Node n where
   ofNat := Node.atom (int_to_atom (Int.ofNat n))
+
+
+instance : ToString Node where
+  toString (n : Node) := repr_node n
 
 
 @[simp]
@@ -21,23 +34,24 @@ def Node.nil : Node := Node.atom (Atom.mk [] (by decide))
 @[simp]
 def Node.one : Node := Node.atom (Atom.mk [1] (by decide))
 
+--#help tactic
 
-def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Result Node Node :=
+def node_at_wdepth (depth: Nat) (p: Nat) (node: Node): Except (Node × String) Node :=
   if depth = 0 then
-    Result.err node "depth is 0"
+    Except.err node "depth is 0"
   else if p < 2 then
     if p = 0 then
-      Result.ok (Node.nil)
+      Except.ok Node.nil
     else
-      Result.ok node
+      Except.ok node
   else
     match node with
-    | Node.atom _ => Result.err node "path into atom"
+    | Node.atom _ => Except.err node "path into atom"
     | Node.pair a b => node_at_wdepth (depth-1) (p / 2) (if p % 2 = 0 then a else b)
 
 
 
-def node_at (p: Nat) (node: Node): Result Node Node := node_at_wdepth (p+1) p node
+def node_at (p: Nat) (node: Node): Except (Node × String) Node := node_at_wdepth (p+1) p node
 
 
 /-
@@ -82,7 +96,6 @@ def highest_bit (n: Nat) : Nat :=
       acc
   (1 <<< (count_bits n 0)) / 2
 
-#eval highest_bit 16
 
 def compose_paths (a: NodePath) (b: NodePath) : NodePath :=
 if a.n = 0 ∨ b.n = 0 then

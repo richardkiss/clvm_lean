@@ -1,6 +1,5 @@
 import Mathlib
 
-
 import Clvm.Atom
 import Clvm.Coe
 import Clvm.Ints.Basic
@@ -57,7 +56,7 @@ lemma node_list_terminator_ind { n1 n2 : Node } : node_to_node_list_terminator (
   rfl
 
 
--- for all nodes, the second element of the result of node_to_node_list_terminator is the rightmost node
+-- for all nodes, the second element of the Except of node_to_node_list_terminator is the rightmost node
 
 theorem node_to_node_list_terminator_ok { n : Node } : (node_to_node_list_terminator n).2 = rightmost_node n := by
   induction' n with atom n1 n2 _ h2
@@ -93,8 +92,8 @@ theorem node_to_node_list_terminator_rewrite { n : Node } : node_to_node_list_te
 
 -- now we can prove that node_to_list works on a list of atoms
 
--- theorem node_to_atoms_only_list_on_one_atom (a: Atom) : node_to_list (Node.pair (Node.atom a) Node.nil) atoms_only = Result.ok [n] := by
---   have h_is_ok : atoms_only (Node.atom a) = Result.ok (Node.atom a) := by rfl
+-- theorem node_to_atoms_only_list_on_one_atom (a: Atom) : node_to_list (Node.pair (Node.atom a) Node.nil) atoms_only = Except.ok [n] := by
+--   have h_is_ok : atoms_only (Node.atom a) = Except.ok (Node.atom a) := by rfl
 
 
 lemma args_to_int_okay_nil_terminated: is_ok (args_to_int n) → (is_nil_terminated_list n) := by
@@ -112,7 +111,7 @@ lemma args_to_int_okay_nil_terminated: is_ok (args_to_int n) → (is_nil_termina
     have hgt0: List.length (rightmost_node n).data = 0 := by
       linarith
     exact h1 hgt0
-  simp [hgt] at h0
+  simp [hgt, Except.err] at h0
 
 
 
@@ -132,25 +131,25 @@ example { z0 z1 : Int } : (int_list_to_node_list [z0, z1]) = [Node.atom (int_to_
 -- we use `node_to_list` a lot in handle_op_xxx so let's prove it works right
 
 
-example : node_to_list Node.nil Result.ok = Result.ok [] := by
+example : node_to_list Node.nil Except.ok = Except.ok [] := by
   rfl
 
 -- node_to_list works on a single atom
-example (n: Node) : node_to_list (Node.pair n Node.nil) Result.ok = Result.ok [n] := by
+example (n: Node) : node_to_list (Node.pair n Node.nil) Except.ok = Except.ok [n] := by
   rfl
 
 -- node_to_list works on two atoms
-example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) Result.ok = Result.ok [n1, n2] := by
+example (n1 n2 : Node) : node_to_list (Node.pair n1 (Node.pair n2 Node.nil)) Except.ok = Except.ok [n1, n2] := by
   rfl
 
 
-def atoms_only (n: Node) : Result Node Node :=
+def atoms_only (n: Node) : Except (Node × String) Node :=
   match n with
-  | Node.atom _ => Result.ok n
-  | _ => Result.err n "not an atom"
+  | Node.atom _ => Except.ok n
+  | _ => Except.err n "not an atom"
 
 -- prove `node_to_list` works on nil
-example : node_to_list Node.nil atoms_only = Result.ok [] := by
+example : node_to_list Node.nil atoms_only = Except.ok [] := by
   rfl
 
 
@@ -180,7 +179,7 @@ example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
 example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
 
 
-theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Result.ok zs := by
+theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by
   induction zs with
   | nil => rfl
   | cons z zs ih =>
@@ -208,7 +207,7 @@ theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘
     simp [zzz]
     unfold node_to_node_list_terminator
     unfold List.map
-    unfold list_result_to_result_list
+    unfold list_except_to_except_list
     simp [atom_to_int_cast]
     unfold only_atoms
     simp

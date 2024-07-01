@@ -6,7 +6,7 @@ import Clvm.Ints.Basic
 import Clvm.Node
 import Clvm.Run
 
--- import Clvm.Puzzles.Casts
+import Clvm.Puzzles.Casts
 import Clvm.Puzzles.Results
 
 
@@ -30,25 +30,25 @@ lemma ok_op_applies_maps (h_q: op.data ≠ [OP_Q]) :
 
   intro h_is_ok
   by_contra h_not_ok
-  obtain ⟨ n, s0, h1 ⟩ := not_ok h_not_ok
+  obtain ⟨ n, h1 ⟩ := not_ok h_not_ok
   simp [map_args] at h1
   simp [apply_node, h_q, h1, is_ok] at h_is_ok
 
 
 
-def Result.as_ok  (r: Result Node β) :=
+def Except.as_ok  (r: Except β Node) :=
   match r with
-  | Result.ok x => x
-  | Result.err _ _ => Node.nil
+  | Except.ok x => x
+  | Except.error _ => Node.nil
 
 
-def map_simple (f : Node → Result Node Node) (n_list: Node) : Node :=
+def map_simple (f : Node → Except (Node × String) Node) (n_list: Node) : Node :=
   match n_list with
   | Node.atom _ => Node.nil
   | Node.pair n rest => Node.pair (f n).as_ok (map_simple f rest)
 
 
-lemma map_or_err_to_simple (h_ok: is_ok (map_or_err f n)) : map_or_err f n = Result.ok (map_simple f n) := by
+lemma map_or_err_to_simple (h_ok: is_ok (map_or_err f n)) : map_or_err f n = Except.ok (map_simple f n) := by
   induction n with
   | atom a =>
     simp [map_or_err, map_simple]
@@ -56,7 +56,7 @@ lemma map_or_err_to_simple (h_ok: is_ok (map_or_err f n)) : map_or_err f n = Res
 
     have h_fn_ok: is_ok (f n) := by
       by_contra h1
-      obtain ⟨ n1, s0, h2 ⟩ := not_ok h1
+      obtain ⟨ n1, h2 ⟩ := not_ok h1
       unfold map_or_err at h_ok
       simp [h2] at h_ok
       cases h_moe: map_or_err f rest with
@@ -64,7 +64,7 @@ lemma map_or_err_to_simple (h_ok: is_ok (map_or_err f n)) : map_or_err f n = Res
           rw [h_moe] at h_ok
           unfold is_ok at h_ok
           simp at h_ok
-      | err _ _ =>
+      | error _ =>
           rw [h_moe] at h_ok
           unfold is_ok at h_ok
           simp at h_ok
@@ -75,24 +75,24 @@ lemma map_or_err_to_simple (h_ok: is_ok (map_or_err f n)) : map_or_err f n = Res
 
     have h_f_rest_ok: is_ok (map_or_err f rest) := by
       by_contra h3
-      obtain ⟨ n2, s0, h4 ⟩ := not_ok h3
+      obtain ⟨ n2, h4 ⟩ := not_ok h3
       unfold map_or_err is_ok at h_ok
       simp [h4] at h_ok
 
     simp [h_f_rest_ok] at h
     simp [h, h1]
-    simp [map_simple, h1, Result.as_ok]
+    simp [map_simple, h1, Except.as_ok]
 
 
-lemma map_or_err_inducts (h_ok: is_ok (map_or_err f (Node.pair n0 tail))) : map_or_err f (Node.pair n0 tail) = Result.ok (Node.pair (f n0).as_ok (map_or_err f tail).as_ok) := by
+lemma map_or_err_inducts (h_ok: is_ok (map_or_err f (Node.pair n0 tail))) : map_or_err f (Node.pair n0 tail) = Except.ok (Node.pair (f n0).as_ok (map_or_err f tail).as_ok) := by
   have h_tail_ok: is_ok (map_or_err f tail) := by
     by_contra h
-    obtain ⟨ n, s0, h1 ⟩ := not_ok h
+    obtain ⟨ n, h1 ⟩ := not_ok h
     simp [map_or_err, map_simple, h1, is_ok] at h_ok
-  simp [(map_or_err_to_simple h_ok), (map_or_err_to_simple h_tail_ok), map_simple, Result.as_ok]
+  simp [(map_or_err_to_simple h_ok), (map_or_err_to_simple h_tail_ok), map_simple, Except.as_ok]
 
 
-lemma map_args_inducts (h_ok: is_ok (map_args k (Node.pair n0 tail) env)) : map_args k (Node.pair n0 tail) env = Result.ok (Node.pair (apply_node k n0 env).as_ok (map_args k tail env).as_ok) := by
+lemma map_args_inducts (h_ok: is_ok (map_args k (Node.pair n0 tail) env)) : map_args k (Node.pair n0 tail) env = Except.ok (Node.pair (apply_node k n0 env).as_ok (map_args k tail env).as_ok) := by
   unfold map_args at *
   apply map_or_err_inducts at h_ok
   exact h_ok
@@ -109,7 +109,7 @@ def applies_unique_to (k0: Nat) := ∀ k ≤ k0, applies_unique_at k
 lemma tail_maps_ok: is_ok (map_args k (Node.pair head tail) env) → is_ok (map_args k tail env) := by
   intro h_ok
   by_contra h
-  obtain ⟨ n, s0, h1 ⟩ := not_ok h
+  obtain ⟨ n, h1 ⟩ := not_ok h
   apply map_args_inducts at h_ok
   simp [map_args] at *
   simp [map_or_err, h1] at h_ok
@@ -120,7 +120,7 @@ lemma head_maps_ok: is_ok (map_args k (Node.pair head tail) env) → is_ok (appl
   obtain ⟨ r0, h_tail_ok ⟩ := tail_maps_ok h_ok
   simp [map_args] at h_tail_ok
   by_contra h
-  obtain ⟨ n, s0, h1 ⟩ := not_ok h
+  obtain ⟨ n, h1 ⟩ := not_ok h
   unfold map_args map_or_err at h_ok
   simp [h_tail_ok, h1, is_ok] at h_ok
 
@@ -185,10 +185,10 @@ lemma apply_op_oks {env sp: Node} : is_ok (apply_node k0.succ (Node.pair (Node.a
     simp [apply_node, map_or_err, h_a, OP_A, OP_Q, h_map_simple] at h_is_ok
 
     induction sp with
-    | atom a => simp [map_simple, is_ok] at h_is_ok
+    | atom a => simp [map_simple, is_ok, Except.err] at h_is_ok
     | pair n0 n1 _ _ =>
       induction n1 with
-      | atom a => simp [map_simple, is_ok] at h_is_ok
+      | atom a => simp [map_simple, is_ok, Except.err] at h_is_ok
       | pair nenv n2 _ _ =>
         induction n2 with
         | atom term =>
@@ -196,7 +196,7 @@ lemma apply_op_oks {env sp: Node} : is_ok (apply_node k0.succ (Node.pair (Node.a
           simp [map_simple]
           simp [map_simple] at h_is_ok
           exact h_is_ok
-        | pair n3 n4 _ _ => simp [map_simple, is_ok] at h_is_ok
+        | pair n3 n4 _ _ => simp [map_simple, is_ok, Except.err] at h_is_ok
 
 
 lemma applies_unique_at_next (k0: Nat) : applies_unique_at k0 → applies_unique_at k0.succ := by
@@ -241,7 +241,7 @@ lemma applies_unique_at_next (k0: Nat) : applies_unique_at k0 → applies_unique
       unfold map_simple map_simple map_simple
       simp
 
-      simp [(h_applies (Result.as_ok (apply_node k0 n_p env)) (Result.as_ok (apply_node k0 n_env env)) h_r_nenv)]
+      simp [(h_applies (Except.as_ok (apply_node k0 n_p env)) (Except.as_ok (apply_node k0 n_env env)) h_r_nenv)]
 
 
 end Apply
