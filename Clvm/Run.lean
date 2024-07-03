@@ -51,21 +51,6 @@ def handle_unused (_args: Node) : Except (Node × String) Node :=
   Except.ok Node.nil
 
 
-
-def OP_ARRAY: Array (Node → Except (Node × String) Node) := #[
-  handle_unused, handle_unused, handle_unused, handle_op_i, -- 0 to 3
-  handle_op_c, handle_op_f, handle_op_r, handle_op_l, -- 4 to 7
-  handle_op_x, handle_op_eq, handle_op_gt_s, handle_op_sha256, -- 8 to 0x0b
-  handle_op_substr, handle_op_strlen, handle_op_concat, handle_unused, -- 0x0c to 0x0f
-  handle_op_add, handle_op_sub, handle_op_mul, handle_op_div,  -- 0x10 to 0x13
-  handle_op_divmod, handle_op_gt, handle_op_ash, handle_op_lsh, -- 0x14 to 0x17
-  handle_op_logand, handle_op_logior, handle_op_logxor, handle_op_lognot, -- 0x18 to 0x1b
-  handle_unused, handle_op_point_add, handle_op_pubkey_for_exp, handle_unused, -- 0x1c to 0x1f
-  handle_op_not, handle_op_any, handle_op_all, handle_unused -- 0x20 to 0x23
-]
-
-
-
 def as_node (nodes: List Node) : Node :=
   let rec inner_func (nodes: List Node) : Node :=
     match nodes with
@@ -135,15 +120,19 @@ def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: N
 def map_or_err (f: Node -> Except (Node × String) Node) (args: Node) : (Except (Node × String) Node) :=
   match args with
   | Node.atom ⟨ _, _ ⟩  => Except.ok Node.nil
-  | Node.pair n1 n2 => match map_or_err f n2 with
-    | Except.ok r2 =>
-      match f n1 with
-      | Except.ok r1 => Except.ok (Node.pair r1 r2)
-      | _other => _other
-    | Except.error e => Except.error e
+  | Node.pair n1 n2 =>do
+      let r2 ← map_or_err f n2
+      let r1 ← f n1
+      return Node.pair r1 r2
 
 
 #eval node_at (atom_to_nat [0x00, 0x02]) (h2n! "ff7701")
+
+
+def exactly_two_args (args: Node) : Except (Node × String) (Node × Node) :=
+  match args with
+  | Node.pair a (Node.pair b (Node.atom ⟨ [], _ ⟩ )) => Except.ok ⟨ a, b ⟩
+  | _ => Except.err args "expected exactly 2 arguments"
 
 
 def apply_node (depth: Nat) (program: Node) (args: Node) : Except (Node × String) Node :=
@@ -157,16 +146,13 @@ def apply_node (depth: Nat) (program: Node) (args: Node) : Except (Node × Strin
       | Node.atom atom =>
           if atom.data = [OP_Q] then
             Except.ok arguments
-          else
-            match map_or_err (fun node => apply_node (depth-1) node args) arguments with
-            | Except.ok eval_args =>
-                if atom.data = [OP_A] then
-                    match eval_args with
-                    | Node.pair program (Node.pair args (Node.atom ⟨ [], _ ⟩ )) => apply_node (depth-1) program args
-                    | _ => Except.err eval_args "apply requires exactly 2 parameters"
-                else
-                  handle_opcode_for_atom atom eval_args
-            | Except.error e => Except.error e
+          else do
+            let args ← map_or_err (apply_node (depth-1) · args) arguments
+            if atom.data = [OP_A] then
+              let ⟨ p, e ⟩ ← exactly_two_args args
+              apply_node (depth-1) p e
+            else
+              handle_opcode_for_atom atom args
 
 
 def my_quote: Node := Node.pair (Node.atom [0x01]) (Node.atom [2, 3, 4])
@@ -216,7 +202,7 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
   simp [h_opcode]
   simp [h_not_q]
   simp [h_not_a]
-  simp [handle_opcode_for_atom]
+  simp [handle_opcode_for_atom, bind, Except.bind]
   rw [h_map_or_err]
 
 

@@ -209,6 +209,7 @@ theorem run_add_one_number_1 {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = Exc
   simp [handle_opcode_for_atom, handle_opcode]
 
   unfold handle_op_add
+  simp [Except.bind, bind, pure, Except.pure]
   simp [List.foldl, args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list]
 
 
@@ -238,6 +239,8 @@ theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]
 
   unfold List.foldl
 
+  simp [Except.bind, bind, pure, Except.pure]
+
   simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list]
 
 
@@ -263,6 +266,7 @@ theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([(OP_ADD: Node), (Node.p
 
   simp [handle_opcode_for_atom, handle_opcode]
   simp [handle_op_add]
+  simp [Except.bind, bind, pure, Except.pure]
   simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list, List.length]
 
 
@@ -291,6 +295,7 @@ theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL): Node), (Node
 
   simp [handle_opcode_for_atom, handle_opcode]
   simp [handle_op_mul]
+  simp [Except.bind, bind, pure, Except.pure]
   simp [args_to_int, node_to_list, node_to_node_list_terminator, list_except_to_except_list, List.length]
 
 

@@ -17,29 +17,29 @@ theorem not_ok {α β : Type} {e: Except α β} (h: ¬ is_ok e) : ∃ a, e = Exc
   | error a => use a
 
 
-def hex_nibble_to_byte (c: Char) : Except (Char × String) Nat :=
+def hex_nibble_to_byte (c: Char) : Except (String × String) Nat :=
   let c := c.toLower
   if c.toNat >= 48 && c.toNat <= 57 then
     Except.ok (c.toNat - 48)
   else if c.toNat >= 97 && c.toNat <= 102 then
     Except.ok (c.toNat - 87)
   else
-    Except.err c "invalid hex digit"
+    Except.err (String.mk [c]) "invalid hex digit"
 
 
-def hex_pair_to_byte (c1 c2: Char) : Except (Char × String) Nat := do
+def hex_pair_to_byte (c1 c2: Char) : Except (String × String) Nat := do
   let n1 ← hex_nibble_to_byte c1
   let n2 ← hex_nibble_to_byte c2
   Except.ok (n1 * 16 + n2)
 
 
-def h2b_lc (s: List Char) : Except (Char × String) (List Nat) :=
+def h2b_lc (s: List Char) : Except (String × String) (List Nat) :=
   match s with
   | c1 :: c2 :: rest => do
     let b ← hex_pair_to_byte c1 c2
     let r ← h2b_lc rest
     Except.ok (b :: r)
-  | [c] => Except.err c "odd number of hex digits"
+  | [c] => Except.err (String.mk [c]) "odd number of hex digits"
   | [] => Except.ok []
 
 

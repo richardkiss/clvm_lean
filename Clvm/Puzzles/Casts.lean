@@ -56,7 +56,7 @@ lemma node_list_terminator_ind { n1 n2 : Node } : node_to_node_list_terminator (
   rfl
 
 
--- for all nodes, the second element of the Except of node_to_node_list_terminator is the rightmost node
+-- for all nodes, the second element of the result of node_to_node_list_terminator is the rightmost node
 
 theorem node_to_node_list_terminator_ok { n : Node } : (node_to_node_list_terminator n).2 = rightmost_node n := by
   induction' n with atom n1 n2 _ h2
