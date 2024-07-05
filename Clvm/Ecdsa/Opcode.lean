@@ -1,9 +1,6 @@
 import Init.NotationExtra
 import Init.Data.Nat.Linear
 
-import Std
-import Lean.Attributes
-
 import Init.Prelude
 import Init.Data.UInt
 import Init.Data.Fin

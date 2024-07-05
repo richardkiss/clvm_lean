@@ -1,4 +1,3 @@
-import Std
 import Lean.Attributes
 
 import Init.Prelude

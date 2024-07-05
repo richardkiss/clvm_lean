@@ -164,7 +164,7 @@ example : node_to_list Node.nil atoms_only = Except.ok [] := by
 -- (l n) => 0 or 1 depending on whether n is an atom
 
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
+example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp ; rfl
 
 
 example: int_to_atom (11: UInt8).toNat = (11: Int) := by simp
@@ -176,7 +176,7 @@ theorem cast_helper (u : Nat) : (instNatCastInt.1 u) = u := by simp
 example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
   simp
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
+example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp ; rfl
 
 
 theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by

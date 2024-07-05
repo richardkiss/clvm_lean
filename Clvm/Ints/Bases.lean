@@ -100,8 +100,6 @@ theorem partial_round_trip {b d : Nat} {hb: b > 1}: ∀ n, (base_b_be_to_nat_inn
     rw [base_b_be_to_nat_inner_extract_k]
     rw [len_nat_to_base_b_be_partial]
     rw [ih]
-    have hr: Nat.succ d0 = d0 + 1 := by simp
-    rw [hr]
     ring_nf
     rw [Nat.add_comm]
     apply Nat.sub_add_cancel

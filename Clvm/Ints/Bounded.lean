@@ -82,9 +82,7 @@ lemma nat_to_base_b_be_partial_form_bounded: z ≠ 0 → ∀ n ∈ nat_to_base_b
           apply (neg_to_base_b_be.power_exp z neg_to_twos_comp.as_nat.proof_1).ngtz_kgtz
           exact h_abs_z_gt_0
         simp [h_z999]
-        apply Nat.sub_lt
-        exact Fin.size_pos'
-        exact h_abs_z_gt_0
+        assumption
 
 
 lemma nat_to_base_b_be_form_bounded {hb: 256 > 1} {n : Nat }: n ≠ 0 → ∀ a ∈ nat_to_base_b_be n hb, a ≤ 255 := by

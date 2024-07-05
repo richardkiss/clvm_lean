@@ -1,9 +1,6 @@
 import Mathlib.Tactic.ByContra
 import Mathlib.Tactic.Use
 
-import Std.Tactic.Basic
-
--- import Clvm.Serde
 
 def Except.err {α β : Type} (e: β) (s: String) : Except (β × String) α := Except.error ⟨ e, s ⟩
 

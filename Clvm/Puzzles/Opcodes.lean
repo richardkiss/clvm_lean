@@ -18,9 +18,6 @@ import Clvm.Puzzles.Casts
 import Clvm.Puzzles.Results
 import Clvm.Run
 
-import Std.Classes.Cast
-import Std.Data.UInt
-
 
 
 -- we have here several theorems about running programs
@@ -121,25 +118,19 @@ theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Except.ok (Node
   rfl
 
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
+example: Int.ofNat (11: UInt8).val.val = (11: Int) := by rfl
 
 
-example: int_to_atom (11: UInt8).toNat = (11: Int) := by simp
+example: int_to_atom (11: UInt8).toNat = (11: Int) := by rfl
 
 
 
-example : (int_to_atom (UInt8.toNat OP_SHA256)) = [11] := by
-  unfold OP_SHA256
-  unfold UInt8.toNat
-  unfold UInt8.val
-  unfold Fin.val
-  conv_lhs => simp
+example : (int_to_atom OP_SHA256) = [11] := by rfl
 
 
-example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
-  simp
+example : Int.ofNat (11: UInt8).toNat = (11: Int) := by rfl
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
+example: Int.ofNat (11: UInt8).val.val = (11: Int) := by rfl
 
 
 

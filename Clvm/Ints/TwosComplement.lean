@@ -32,7 +32,6 @@ def min_power_of_b_exceeding_n_and_exponent (b n: Nat) (hb: b>1) : MinPowerExcee
       have h_new_b_k : new_b_k = b_k * b := by rfl
       have _: n + 1 - b_k * b < n + 1 - b_k := by
         refine Nat.sub_lt_sub_left ?_ ?_
-        have hbk1: b_k < n + 1:= by linarith
         linarith
         exact (lt_mul_iff_one_lt_right hbk).mpr hb
       have h_newbk: new_b_k > 0 := by exact lt_mul_of_lt_of_one_lt' hbk hb
@@ -116,7 +115,7 @@ theorem round_trip_neg {hb: b > 1}: (z < 0) → base_b_be_to_neg (neg_to_base_b_
 lemma prefix_idemopotent_neg_to_base_b_be {hb: b>1} : base_b_be_to_neg ((b-1) :: ns) b = base_b_be_to_neg ns b := by
   unfold base_b_be_to_neg
   simp [base_b_be_to_nat]
-  rw [Nat.succ_eq_add_one, Nat.pow_add]
+  rw [Nat.pow_add]
   simp [base_b_be_to_nat_inner]
   conv_lhs => rw [base_b_be_to_nat_inner_extract_k]
   rw [Nat.sub_add_eq, Nat.mul_comm, ← Nat.mul_sub_right_distrib, Nat.sub_sub_self]

@@ -132,7 +132,7 @@ def map_or_err (f: Node -> Except (Node × String) Node) (args: Node) : (Except 
 def exactly_two_args (args: Node) : Except (Node × String) (Node × Node) :=
   match args with
   | Node.pair a (Node.pair b (Node.atom ⟨ [], _ ⟩ )) => Except.ok ⟨ a, b ⟩
-  | _ => Except.err args "expected exactly 2 arguments"
+  | _ => Except.err args "apply requires exactly 2 parameters"
 
 
 def apply_node (depth: Nat) (program: Node) (args: Node) : Except (Node × String) Node :=
