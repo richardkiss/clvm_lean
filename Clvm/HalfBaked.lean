@@ -1,43 +1,41 @@
 import Clvm.Atom
 
 
-lemma powers_cancel: (2 ^ (n + 1) / 2) = 2 ^ n := by
+lemma powers_cancel (k n: Nat): k * (2 ^ (n + 1) / 2) = k * 2 ^ n := by
   rw [Nat.div_eq_of_eq_mul_left]
   simp
   ring
 
 
-lemma BITS_and (b: Nat): ∀ c, (2 ^ b) > c → Nat.bitwise and c (2 ^ b) = 0 := by
+-- this may be useful with the serde stuff
+lemma and_shifted_too_far_0 (b k: Nat): ∀ c, (2 ^ b) > c → Nat.bitwise and c (k * (2 ^ b)) = 0 := by
   induction b with
   | zero => intro c h; simp at h ; simp [h]
   | succ n ih =>
     intro c h
     unfold Nat.bitwise
 
-    have zzzz: 2 ^ n > c/2 := by
-      by_contra h1
-      simp only [not_lt] at h1
-      have zzz1: 2 ^ (n + 1) ≤ c := calc
-        2 ^ (n + 1) = 2 * 2 ^ n := by ring
-        _ ≤ 2 ^ n + 2 ^ n := by linarith
-        _ ≤ c / 2 + c / 2 := by linarith
-        _ = c / 2 * 2:= by ring
-        _ ≤ c := by exact Nat.div_mul_le_self c 2
-      linarith
-
-    have h_pow2_even: 2 ^ (n + 1) % 2 ≠ 1 := by
-      simp
-      exact Nat.mul_mod_left (2 ^ n) 2
-
     if h_c: c = 0 then
       simp [h_c]
     else
       simp [h_c]
-      simp [powers_cancel]
-      simp [h_pow2_even]
+      if h_k: k = 0 then
+        simp [h_k]
+      else
+        simp [h_k]
+        ring_nf
+        simp [powers_cancel k n]
 
-      apply ih
-      assumption
+        apply ih
+        by_contra h1
+        simp only [not_lt] at h1
+        have: 2 ^ (n + 1) ≤ c := calc
+          2 ^ (n + 1) = 2 * 2 ^ n := by ring
+          _ ≤ 2 ^ n + 2 ^ n := by linarith
+          _ ≤ c / 2 + c / 2 := by linarith
+          _ = c / 2 * 2:= by ring
+          _ ≤ c := by exact Nat.div_mul_le_self c 2
+        linarith
 
 
 lemma small_pos_to_twos_comp: n > 0 → n < 128 → pos_to_twos_comp n = [n] := by
@@ -52,35 +50,10 @@ lemma small_pos_to_twos_comp: n > 0 → n < 128 → pos_to_twos_comp n = [n] := 
   have h_n_lt_256: n < 256 := by linarith
   simp [h_n_lt_256]
   simp [is_msb_set]
-  obtain h_and_0 := (BITS_and 7 n)
+  obtain h_and_0 := (and_shifted_too_far_0 7 1 n)
   simp [h_n128] at h_and_0
   simp [HAnd.hAnd, AndOp.and, Nat.land]
   simp [h_and_0]
-
-
-
-
-
-
-lemma int_nat_abs_id (k: Nat): (Int.ofNat k).natAbs = k := by rfl
-
-
-
-lemma int_of_nat_sum_dist (m n: Nat) : Int.ofNat (m + n) = (Int.ofNat m) + (Int.ofNat n) := by rfl
-
-
-lemma int_of_nat_eq (k m: Nat): Int.ofNat k = Int.ofNat m → k = m := by
-  intro h
-  simp at h
-  exact h
-
-
-lemma int_of_nat_sum (k m n: Nat): Int.ofNat k + Int.ofNat m = Int.ofNat n → k + m = n := by
-  intro h0
-  rw [← int_of_nat_sum_dist k m] at h0
-  apply int_of_nat_eq (k+m) n
-  exact h0
-
 
 
 lemma proof_for_small_int (z: Int) (h_z_gt_0: z > 0) (h_z_lt_128: z < 128) : ∀ n ∈ [z.natAbs], n ≤ 255 := by
@@ -117,10 +90,7 @@ theorem small_int_to_atom (z: Int) {h_z_gt_0: z > 0} {h_z_lt_128: z < 128}
   | negSucc k => simp only [gt_iff_lt, Int.negSucc_not_pos] at h_z_gt_0
 
 
-
 /-
-
-
 lemma int_lt_nat_lt (m n: Nat): Int.ofNat m ≤ Int.ofNat n → m ≤ n := by
   intro h
 
@@ -211,3 +181,22 @@ theorem small_int_to_atom1 (z: Int) (h_z_gt_0: z > 0) (h_z_lt_128: z < 128)
     linarith
   | negSucc k => simp only [gt_iff_lt, Int.negSucc_not_pos] at h_z_gt_0
 -/
+
+
+lemma int_nat_abs_id (k: Nat): (Int.ofNat k).natAbs = k := by rfl
+
+
+lemma int_of_nat_sum_dist (m n: Nat) : Int.ofNat (m + n) = (Int.ofNat m) + (Int.ofNat n) := by rfl
+
+
+lemma int_of_nat_eq (k m: Nat): Int.ofNat k = Int.ofNat m → k = m := by
+  intro h
+  simp at h
+  exact h
+
+
+lemma int_of_nat_sum (k m n: Nat): Int.ofNat k + Int.ofNat m = Int.ofNat n → k + m = n := by
+  intro h0
+  rw [← int_of_nat_sum_dist k m] at h0
+  apply int_of_nat_eq (k+m) n
+  exact h0
