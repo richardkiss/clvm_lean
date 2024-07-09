@@ -230,25 +230,6 @@ theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Except.ok (Node
   rfl
 
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
-
-
-example: int_to_atom (11: UInt8).toNat = (11: Int) := by simp
-
-
-
-theorem cast_helper (u : Nat) : (instNatCastInt.1 u) = u := by simp
-
-
-example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
-  simp
-
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp
-
-
-
-
-
 theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by
   induction zs with
   | nil => rfl

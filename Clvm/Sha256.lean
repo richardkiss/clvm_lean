@@ -153,7 +153,7 @@ def u32_to_u8 (x : UInt32) : List UInt8 :=
 
 
 def hex_u32 (x : UInt32) : String :=
-  b2h_uint8 (u32_to_u8 x)
+  b2h ((u32_to_u8 x).map (fun x => x.toNat))
 
 
 def to_hex (x : Array UInt32) := String.join (x.toList.map hex_u32)

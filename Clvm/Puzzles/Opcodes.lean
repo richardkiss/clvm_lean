@@ -224,21 +224,6 @@ theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Except.ok (Node
   rfl
 
 
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by rfl
-
-
-example: int_to_atom (11: UInt8).toNat = (11: Int) := by rfl
-
-
-
-example : (int_to_atom OP_SHA256) = [11] := by rfl
-
-
-example : Int.ofNat (11: UInt8).toNat = (11: Int) := by rfl
-
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by rfl
-
-
 
 -- set_option maxHeartbeats 2400000
 
@@ -501,7 +486,7 @@ theorem run_concat_atoms { nat_lists: List (List Nat) } : bruns_to (Node.pair OP
   simp [map_err_quoted_atoms_is_ok]
   simp [bind, Except.bind]
   induction nat_lists with
-  | nil => simp [node_list_to_node, node_to_list, Atom.to, array_of_uint8_to_atom, atom_cast]
+  | nil => simp [node_list_to_node, node_to_list, Atom.to, atom_cast]
   | cons head tail ih =>
 
     have h_is_ok: is_ok (node_to_list (node_list_to_node (List.map Node.atom (tail.bind fun a => [atom_cast a]))) atom_only_cast) := by
@@ -517,6 +502,6 @@ theorem run_concat_atoms { nat_lists: List (List Nat) } : bruns_to (Node.pair OP
     rw [hn0] at ih
     simp at ih
 
-    simp [node_list_to_node, node_to_list, Atom.to, array_of_uint8_to_atom, atom_cast]
+    simp [node_list_to_node, node_to_list, Atom.to, atom_cast]
 
     sorry

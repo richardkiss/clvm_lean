@@ -67,10 +67,6 @@ def b2h (bytes : List Nat) : String :=
   String.join (bytes.map (λ b => nat_to_hex b))
 
 
-def b2h_uint8 (bytes : List UInt8) : String :=
-  b2h (bytes.map (λ b => b.toNat))
-
-
 def List.hex (bytes: List Nat) : String :=
   b2h bytes
 

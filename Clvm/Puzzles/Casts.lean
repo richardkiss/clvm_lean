@@ -50,46 +50,6 @@ theorem nil_terminated_idempotent { n1 n2 : Node } : is_nil_terminated_list (Nod
   rfl
 
 
-/-
--- the first step for many handle_op_xxx functions is to convert a node to a list of nodes with node_to_node_list_terminator
--- let's prove it works right
-lemma node_list_terminator_ind { n1 n2 : Node } : node_to_node_list_terminator (Node.pair n1 n2) = ⟨ n1 :: (node_to_node_list_terminator n2).1, (node_to_node_list_terminator n2).2⟩ := by
-  rfl
-
-
--- for all nodes, the second element of the result of node_to_node_list_terminator is the rightmost node
-
-theorem node_to_node_list_terminator_ok { n : Node } : (node_to_node_list_terminator n).2 = rightmost_node n := by
-  induction' n with atom n1 n2 _ h2
-  rfl
-  unfold rightmost_node
-  rw [← h2]
-  rfl
-
-
-
--- now let's work on (node_to_node_list_terminator).1
-
-def alt_node_to_node_list_terminator_without_terminator (n: Node) : (List Node) :=
-  match n with
-  | Node.atom _ => []
-  | Node.pair n1 n2 => n1 :: alt_node_to_node_list_terminator_without_terminator n2
-
-
--- we will show that (node_to_node_list_terminator).1 is the same as alt_node_to_node_list_terminator_without_terminator
-theorem node_to_node_list_terminator_1 { n : Node } : (node_to_node_list_terminator n).1 = alt_node_to_node_list_terminator_without_terminator n := by
-  induction' n with atom n1 n2 _ h2
-  rfl
-  unfold node_to_node_list_terminator
-  simp
-  rw [h2]
-  rfl
-
-
--- and here's the simpler version
-theorem node_to_node_list_terminator_rewrite { n : Node } : node_to_node_list_terminator n = ⟨ alt_node_to_node_list_terminator_without_terminator n, rightmost_node n ⟩ := by
-  rw [← node_to_node_list_terminator_1, ← node_to_node_list_terminator_ok]
--/
 
 -- now we can prove that node_to_list works on a list of atoms
 
@@ -162,21 +122,6 @@ example : node_to_list Node.nil atoms_only = Except.ok [] := by
 -- set_option maxHeartbeats 1000000
 
 -- (l n) => 0 or 1 depending on whether n is an atom
-
-
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp ; rfl
-
-
-example: int_to_atom (11: UInt8).toNat = (11: Int) := by simp
-
-
-theorem cast_helper (u : Nat) : (instNatCastInt.1 u) = u := by simp
-
-
-example : Int.ofNat (11: UInt8).toNat = (11: Int) := by
-  simp
-
-example: Int.ofNat (11: UInt8).val.val = (11: Int) := by simp ; rfl
 
 
 theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by

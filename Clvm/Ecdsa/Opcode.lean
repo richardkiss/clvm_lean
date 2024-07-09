@@ -36,7 +36,7 @@ def nat_to_bytes48 (n : Nat) : Array UInt8 :=
   (loop 48 n).toArray
 
 
-def serialize_point (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
+def serialize_point_uint8 (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
   let ap : AffinePoint CurveBLS12381 := jacobian_to_affine p sorry
   match ap with
   | AffinePoint.infinity =>
@@ -48,6 +48,9 @@ def serialize_point (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
     let new_x_bytes := #[new_x_bytes_0] ++ (x_bytes.extract 1 48)
     new_x_bytes
 
+
+def serialize_point (p: JacobianPoint CurveBLS12381) : List Nat :=
+  (serialize_point_uint8 p).toList |> List.map UInt8.toNat
 
 
 

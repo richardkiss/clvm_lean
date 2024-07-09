@@ -5,15 +5,15 @@ import Clvm.Sha256
 import Clvm.Util
 
 /-! sign-extend the given array to the given size -/
-def extend (a : Array UInt8) (size : Nat) : Array UInt8 :=
-  let v : UInt8 := match a[0]? with
+def extend (a : Array Nat) (size : Nat) : Array Nat :=
+  let v : Nat := match a[0]? with
     | none => 0
     | some x => if x >= 128 then 255 else 0
   (Array.mkArray (size - a.size) v) ++ a
 
 
 /-! extend the smaller array to the length of the larger array -/
-def equalize (a0 b0 : Array UInt8) : (Array UInt8 × Array UInt8) :=
+def equalize (a0 b0 : Array Nat) : (Array Nat × Array Nat) :=
   if a0.size < b0.size then
     (extend a0 b0.size, b0)
   else if a0.size > b0.size then
@@ -22,11 +22,11 @@ def equalize (a0 b0 : Array UInt8) : (Array UInt8 × Array UInt8) :=
     (a0, b0)
 
 
-def minimize (depth : Nat) (a : Array UInt8) : Array UInt8 :=
+def minimize (depth : Nat) (a : Array Nat) : Array Nat :=
   if depth = 0 then
     a
   else
-    let first : Option UInt8 := a[0]?
+    let first : Option Nat := a[0]?
     match first with
     | none => a
     | some 0 => match a[1]? with
@@ -44,17 +44,17 @@ def minimize (depth : Nat) (a : Array UInt8) : Array UInt8 :=
     | _ => a
 
 
-def logical_op (a : Array UInt8) (b : Int) (f : Nat → Nat → Nat) : Array UInt8 :=
+def logical_op (a : Array Nat) (b : Int) (f : Nat → Nat → Nat) : Array Nat :=
   let b0 := int_to_atom b
   let (a, b) := equalize a b0
   let r := a.zip b
-  let r := r.map (fun (a, b) => (f a.toNat b.toNat).toUInt8)
+  let r := r.map (fun (a, b) => (f a b))
   minimize r.size r
 
 
-def land (a : Array UInt8) (b : Int): Array UInt8 := logical_op a b (fun a b => a.land b)
-def lor (a : Array UInt8) (b : Int): Array UInt8 := logical_op a b (fun a b => a.lor b)
-def lxor (a : Array UInt8) (b : Int): Array UInt8 := logical_op a b (fun a b => a.xor b)
+def land (a : Array Nat) (b : Int): Array Nat := logical_op a b (fun a b => a.land b)
+def lor (a : Array Nat) (b : Int): Array Nat := logical_op a b (fun a b => a.lor b)
+def lxor (a : Array Nat) (b : Int): Array Nat := logical_op a b (fun a b => a.xor b)
 
 
 
@@ -123,7 +123,7 @@ def handle_op_eq (args: Node) : Except (Node × String) Node :=
   | _ => Except.err args "= takes exactly 2 arguments"
 
 
-def compare_gr_s (depth: Nat) (v0: Array UInt8) (v1: Array UInt8) : Bool :=
+def compare_gr_s (depth: Nat) (v0: Array Nat) (v1: Array Nat) : Bool :=
   if depth = 0 then
     False
   else
@@ -169,7 +169,7 @@ def handle_op_substr (args: Node) : Except (Node × String) Node :=
     | _ => Except.err args "substr takes exactly 2 or 3 arguments"
   | _ => Except.err args "substr takes exactly 2 or 3 arguments"
 
-  let three_args : Except (Node × String) ((Array UInt8) × Int × Int) :=
+  let three_args : Except (Node × String) ((Array Nat) × Int × Int) :=
     match three_args with
     | Except.error ⟨ a, b ⟩ => Except.err a b
     | Except.ok (string_node, start_node, maybe_end) =>
@@ -190,7 +190,7 @@ def handle_op_substr (args: Node) : Except (Node × String) Node :=
       if i2 > s0.size ∨ i2 < i1 ∨ i2 < 0 ∨ i1 < 0 then
         Except.err args "invalid indices for substr"
       else
-        Except.ok (Node.atom (s0.extract i1.toNat i2.toNat))
+        Except.ok (Node.atom (s0.toList.extract i1.natAbs i2.natAbs))
 
 
 def handle_op_strlen (args: Node) : Except (Node × String) Node :=
@@ -206,8 +206,8 @@ def handle_op_concat (args: Node) : Except (Node × String) Node :=
   match node_to_list args atom_only_cast with
   | Except.error ⟨ a,  _ ⟩  => Except.err a "concat on list"
   | Except.ok args =>
-      let total : Array UInt8 := args.foldl (fun a b => a ++ b) #[]
-      Except.ok (Node.atom total)
+      let total : Array Nat := args.foldl (fun a b => a ++ b) #[]
+      Except.ok (Node.atom total.toList)
 
 
 def handle_op_add (args: Node) : Except (Node × String) Node :=
@@ -347,21 +347,21 @@ def handle_op_logand (args: Node) : Except (Node × String) Node :=
   match args_to_int args with
   | Except.error ⟨ _, b ⟩ => Except.err args b
   | Except.ok args =>
-      Except.ok (Node.atom (args.foldl (fun a b => land a b) [255]))
+      Except.ok (Node.atom (args.foldl (fun a b => land a b) #[255]).toList)
 
 
 def handle_op_logior (args: Node) : Except (Node × String) Node :=
   match args_to_int args with
   | Except.error ⟨ _, b ⟩ => Except.err args b
   | Except.ok args =>
-      Except.ok (Node.atom (args.foldl (fun a b => lor a b) ([]: List Nat)))
+      Except.ok (Node.atom (args.foldl (fun a b => lor a b) #[]).toList)
 
 
 def handle_op_logxor (args: Node) : Except (Node × String) Node :=
   match args_to_int args with
   | Except.error ⟨ _, b ⟩ => Except.err args b
   | Except.ok args =>
-      Except.ok (Node.atom (args.foldl (fun a b => lxor a b) ([]: List Nat)))
+      Except.ok (Node.atom (args.foldl (fun a b => lxor a b) #[]).toList)
 
 
 def handle_op_lognot (args: Node) : Except (Node × String) Node :=
@@ -372,8 +372,8 @@ def handle_op_lognot (args: Node) : Except (Node × String) Node :=
       if v0.length = 0 then
         Except.ok (Node.atom [255])
       else
-        let v1 : Array UInt8 := lxor v0 (-1)
-        Except.ok (Node.atom (int_to_atom (atom_to_int v1)))
+        let v1 : Array Nat := lxor v0 (-1)
+        Except.ok (Node.atom (int_to_atom (atom_to_int v1.toList)))
       | _ => Except.err a0 "lognot requires int args"
   | _ => Except.err args "lognot takes exactly 1 argument"
 

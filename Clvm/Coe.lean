@@ -56,7 +56,3 @@ instance : Coe (List Int) Node where
 
 instance : Coe (List Atom) Node where
   coe := node_list_to_node ∘ (List.map Node.atom)
-
-
-instance : CoeOut (List Nat) (List UInt8) where
-  coe := List.map UInt8.ofNat

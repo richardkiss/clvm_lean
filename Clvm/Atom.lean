@@ -29,8 +29,6 @@ instance : CoeOut Atom (List Nat) := ⟨fun a => a.data⟩
 
 instance : CoeOut Atom (Array Nat) := ⟨fun a => a.data.toArray⟩
 
-instance : CoeOut Atom (Array UInt8) := ⟨fun a => a.data.toArray.map UInt8.ofNat⟩
-
 
 def max_255 (n: Nat) : Nat := if n ≤ 255 then n else 255
 
@@ -68,18 +66,6 @@ def atom_cast (a: List Nat) : Atom :=
 
 instance : Coe (List Nat) Atom where
   coe := atom_cast
-
-
-def array_of_uint8_to_atom (a: Array UInt8) : Atom :=
-  let as_nat_list := a.map (fun x => x.val)
-  let as_list := as_nat_list.toList
-  let as_nat_list : List Nat := as_list.map max_255
-  let proof : ∀ n ∈ as_list.map max_255, n ≤ 255 := max_yields_limited_list as_list
-  Atom.mk as_nat_list proof
-
-
-instance : CoeOut (Array UInt8) Atom where
-  coe := array_of_uint8_to_atom
 
 
 def atom_to_nat (atom: Atom) : Nat :=
