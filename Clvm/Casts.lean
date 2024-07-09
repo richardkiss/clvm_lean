@@ -19,21 +19,6 @@ def node_to_list_1 (args: Node) (cast: Node → Except (Node × String) α): Exc
 def node_to_list_int (args: Node) (cast: Node → Except (Node × String) Int): Except (Node × String) (List Int) := node_to_list_1 args cast
 
 
-def node_to_node_list_terminator (args: Node) : (List Node) × (List Nat) :=
-  match args with
-  | Node.atom a => ⟨[], a.data⟩
-  | Node.pair first rest =>
-    let ⟨ rest, terminator⟩ := node_to_node_list_terminator rest
-    ⟨first :: rest, terminator⟩
-
-
-def node_to_node_list (args: Node) : Except (Node × String) (List Node) :=
-  let r := node_to_node_list_terminator args
-  match r with
-  | (l, []) => Except.ok l
-  | _ => Except.err args "unexpected terminator"
-
-
 def list_except_to_except_list (args: List (Except (Node × String) α)): Except (Node × String) (List α) :=
   match args with
   | [] => Except.ok []
@@ -44,14 +29,13 @@ def list_except_to_except_list (args: List (Except (Node × String) α)): Except
 
 
 def node_to_list (args: Node) (cast: Node → Except (Node × String) α): Except (Node × String) (List α) :=
-  let step1 : List Node × List Nat := node_to_node_list_terminator args
-  -- need to prove that right node is nil
-  if step1.2.length > 0 then
-    Except.err args "unexpected terminator"
-  else
-    let step2 : List (Except (Node × String) α) := step1.1.map cast
-    -- need to prove that all casts "succeed"
-    list_except_to_except_list step2
+  match args with
+  | Node.atom ⟨ [], _ ⟩  => Except.ok []
+  | Node.atom _ => Except.err args "unexpected terminator"
+  | Node.pair n1 n2 => do
+      let tail ← node_to_list n2 cast
+      let head ← cast n1
+      return head :: tail
 
 
 def only_atoms (node: Node) (cast : Atom → α) : Except (Node × String) α :=
@@ -108,14 +92,8 @@ def node_to_u32 (n: Node) : Except (Node × String) UInt32 :=
   | Except.error a => Except.error a
 
 
-def atom_to_u32 (atom: Array UInt8) : Except (Node × String) UInt32 :=
-  match nat_to_uint32 (atom_to_nat atom) with
-  | Except.ok v => Except.ok v
-  | Except.error e => Except.error e
-
-
-def atom_to_shift_int (op: String) (atom: Array UInt8) : Except (Node × String) Int :=
-  if atom.size > 4 then
+def atom_to_shift_int (op: String) (atom: Atom) : Except (Node × String) Int :=
+  if atom.length > 4 then
     Except.err (Node.atom atom) (op ++ " requires int32 args (with no leading zeros)")
   else
     let as_int := atom_to_int atom

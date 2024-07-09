@@ -22,27 +22,88 @@ def Q1 : Node := Node.pair 1 1
 
 
 -- n is a node. We have (a (q . n) 0) => n
-example { n: Node } : apply (Node.pair 1 n) Node.nil = Except.ok n := by rfl
+example { n: Node } : apply (Node.pair 1 n) Node.nil = Except.ok n := by
+  dsimp [apply]
+  unfold apply_node
+  simp [small_int_to_atom, OP_Q]
 
 
 -- (q . 1).replace("r", n) => (1 . n)
 
-example { x: Node } : replace Q1 [Replacement.mk "r" x] = Node.pair 1 x := by rfl
+example { x: Node } : replace Q1 [Replacement.mk "r" x] = Node.pair 1 x := by
+  simp only [nodepath_for_string]
+  simp only [List.foldl, compose_paths, TOP, nodepath_for_char, highest_bit]
+  simp only [↓Char.isValue, Char.reduceEq, ↓reduceIte, OfNat.ofNat_ne_zero, or_self,
+    highest_bit.count_bits, zero_lt_one, ↓reduceDite, Nat.reduceDiv, zero_add, lt_self_iff_false]
+  simp only [HShiftLeft.hShiftLeft, ShiftLeft.shiftLeft, Nat.shiftLeft, mul_one, Nat.ofNat_pos,
+    Nat.div_self, Nat.xor_self, add_zero]
+
+  unfold replace
+  simp only [List.isEmpty, Bool.false_eq_true, ↓reduceIte]
+  simp only [split_replacements, split_replacements.loop, OfNat.ofNat_ne_one, ↓reduceIte,
+    Nat.reduceMod, one_ne_zero, Nat.reduceDiv, Node.pair.injEq]
+  simp only [Q1]
+  simp only [replace, List.isEmpty_nil, List.isEmpty_cons, Bool.false_eq_true, ↓reduceIte]
 
 
 -- try following paths
 
 -- brun '2 (x . y)' => x
-example { x y: Node } : bruns_to 2 (Node.pair x y) x := by use 1; rfl
+example { x y: Node } : bruns_to 2 (Node.pair x y) x := by
+  use 1;
+  unfold apply_node
+  simp only [one_ne_zero, ↓reduceIte, atom_to_nat, Int.ofNat_eq_coe, Nat.cast_ofNat, gt_iff_lt,
+    Nat.ofNat_pos, Int.reduceLT, small_int_to_atom, Int.reduceAbs]
+  simp only [node_at, base_b_be_to_nat_inner, List.length_nil, pow_zero, mul_one, zero_add,
+    Nat.reduceAdd, node_at_wdepth, OfNat.ofNat_ne_zero, ↓reduceIte, lt_self_iff_false,
+    Nat.reduceSub, Nat.ofNat_pos, Nat.div_self, Nat.mod_self]
+  unfold node_at_wdepth
+  simp only [OfNat.ofNat_ne_zero, ↓reduceIte, Nat.one_lt_ofNat, one_ne_zero]
+
 
 -- brun '3 (x . y)' => y
-example { x y: Node } : bruns_to 3 (Node.pair x y) y := by use 1; rfl
+example { x y: Node } : bruns_to 3 (Node.pair x y) y := by
+  use 1
+  unfold apply_node
+  simp only [one_ne_zero, ↓reduceIte, atom_to_nat, Int.ofNat_eq_coe, Nat.cast_ofNat, gt_iff_lt,
+    Nat.ofNat_pos, Int.reduceLT, small_int_to_atom, Int.reduceAbs]
+  simp only [node_at, base_b_be_to_nat_inner, List.length_nil, pow_zero, mul_one, zero_add,
+    Nat.reduceAdd, node_at_wdepth, OfNat.ofNat_ne_zero, ↓reduceIte, lt_self_iff_false,
+    Nat.reduceSub, Nat.ofNat_pos, Nat.div_self, Nat.mod_self]
+  unfold node_at_wdepth
+  simp only [OfNat.ofNat_ne_zero, ↓reduceIte, Nat.one_lt_ofNat, one_ne_zero]
+
 
 -- (i (q . 1) 2 3)
 def if_example_true : Node := [3, Q1, 2, 3]
 
 -- brun (i (q . 1) 2 3) (x . y) => x
-example { x y: Node } : bruns_to if_example_true (Node.pair x y) x := by use 2; rfl
+example { x y: Node } : bruns_to if_example_true (Node.pair x y) x := by
+  use 2
+  unfold apply_node
+  simp only [one_ne_zero, ↓reduceIte, atom_to_nat, Int.ofNat_eq_coe, Nat.cast_ofNat, gt_iff_lt,
+    Nat.ofNat_pos, Int.reduceLT, small_int_to_atom, Int.reduceAbs]
+
+  dsimp [if_example_true]
+  simp [node_list_to_node]
+  simp [small_int_to_atom]
+  simp [OP_Q, OP_A]
+  unfold map_or_err map_or_err map_or_err map_or_err
+  simp [bind, Except.bind, pure, Except.pure]
+  unfold apply_node
+  simp
+  simp [node_at, atom_to_nat]
+  simp [small_int_to_atom]
+  simp [base_b_be_to_nat_inner]
+  unfold node_at_wdepth node_at_wdepth
+  simp
+  simp [Q1, small_int_to_atom, OP_Q]
+  simp [handle_opcode_for_atom]
+  simp [small_int_to_atom, handle_opcode, handle_op_i]
+  simp [OfNat.ofNat]
+  dsimp [One.one, int_to_atom, int_to_twos_comp]
+  simp [pos_to_twos_comp, pos_to_twos_comp.as_nat, nat_to_base_b_be, digit_count, nat_to_base_b_be_partial]
+  simp [is_msb_set]
 
 
 def if_example_false : Node := [3, 0, 2, 3]
@@ -51,7 +112,10 @@ def if_example_false : Node := [3, 0, 2, 3]
 example { x y: Node } : bruns_to if_example_false (Node.pair x y) y := by use 2; rfl
 
 -- brun (+) n => 0
-example { n: Node } : bruns_to (Node.pair OP_ADD Node.nil) n 0 := by use 1; rfl
+example { n: Node } : bruns_to (Node.pair OP_ADD Node.nil) n 0 := by
+  use 1
+
+  rfl
 
 
 def cons_example : Node := [OP_C, 2, 3]
@@ -266,7 +330,7 @@ def quoted_nodes (ns : List Node) : Node :=
 
 
 -- we can `map_or_err` a list of subprograms that apply, we end up with a list of Excepts in the intuitive way. This provides a shortcut
-lemma map_or_err_good_subprograms {Excepts subprograms: List Node}: map_or_err (fun n ↦ apply_node k n env) (node_list_to_node subprograms) = Except.ok (node_list_to_node Excepts) := by
+lemma map_or_err_good_subprograms {subprograms: List Node}: map_or_err (apply_node k · env) (node_list_to_node subprograms) = Except.ok (node_list_to_node results) := by
   sorry
 
 

@@ -157,6 +157,7 @@ def nodepath_for_char (c: Char) : NodePath :=
     { n := 0 }
 
 
+@[simp]
 def nodepath_for_string (s: String) : NodePath :=
   let np : List NodePath := s.data.map nodepath_for_char
   np.foldl compose_paths TOP

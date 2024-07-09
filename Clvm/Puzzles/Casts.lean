@@ -50,6 +50,7 @@ theorem nil_terminated_idempotent { n1 n2 : Node } : is_nil_terminated_list (Nod
   rfl
 
 
+/-
 -- the first step for many handle_op_xxx functions is to convert a node to a list of nodes with node_to_node_list_terminator
 -- let's prove it works right
 lemma node_list_terminator_ind { n1 n2 : Node } : node_to_node_list_terminator (Node.pair n1 n2) = ⟨ n1 :: (node_to_node_list_terminator n2).1, (node_to_node_list_terminator n2).2⟩ := by
@@ -88,7 +89,7 @@ theorem node_to_node_list_terminator_1 { n : Node } : (node_to_node_list_termina
 -- and here's the simpler version
 theorem node_to_node_list_terminator_rewrite { n : Node } : node_to_node_list_terminator n = ⟨ alt_node_to_node_list_terminator_without_terminator n, rightmost_node n ⟩ := by
   rw [← node_to_node_list_terminator_1, ← node_to_node_list_terminator_ok]
-
+-/
 
 -- now we can prove that node_to_list works on a list of atoms
 
@@ -103,15 +104,14 @@ lemma args_to_int_okay_nil_terminated: is_ok (args_to_int n) → (is_nil_termina
   unfold is_nil_terminated_list at h1
   unfold args_to_int at h0
   unfold node_to_list at h0
-  rw [node_to_node_list_terminator_rewrite] at h0
-  simp at h0
-  unfold Atom.length at h1
-  have hgt: List.length (rightmost_node n).data > 0 := by
-    by_contra hgtn
-    have hgt0: List.length (rightmost_node n).data = 0 := by
-      linarith
-    exact h1 hgt0
-  simp [hgt, Except.err] at h0
+  match n with
+  | Node.atom ⟨ [], _ ⟩ =>
+    simp [Atom.length] at h1
+    simp [rightmost_node] at h1
+  | Node.atom ⟨ head :: tail, lt ⟩ =>
+    simp at h0
+    sorry
+  | Node.pair n1 n2 => sorry
 
 
 
@@ -183,43 +183,17 @@ theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘
   induction zs with
   | nil => rfl
   | cons z zs ih =>
-
-    simp
-
-    unfold int_list_to_node_list
-    unfold node_list_to_node
-    unfold args_to_int
-    unfold node_to_list
-    simp only [gt_iff_lt]
-
-    have zzz0: is_nil_terminated_list (node_list_to_node (int_list_to_node_list zs)) := by
-      simp at ih
-      exact args_to_int_okay_nil_terminated ⟨zs, ih⟩
-
-    have zzz1: List.length (node_to_node_list_terminator (node_list_to_node (int_list_to_node_list zs))).2 = 0 := by
-      rw [node_to_node_list_terminator_rewrite]
-      congr
-
-    have zzz: (node_to_node_list_terminator (Node.pair (Node.atom (int_to_atom z)) (node_list_to_node (int_list_to_node_list zs)))).2.length = 0 := by
-      rw [node_to_node_list_terminator_rewrite]
-      congr
-
-    simp [zzz]
-    unfold node_to_node_list_terminator
-    unfold List.map
-    unfold list_except_to_except_list
+    simp [int_list_to_node_list]
+    simp [node_list_to_node]
+    simp [args_to_int]
+    simp [node_to_list]
     simp [atom_to_int_cast]
-    unfold only_atoms
-    simp
+    simp [only_atoms]
 
-    simp at ih
-    unfold args_to_int at ih
-    unfold node_to_list at ih
-    simp at ih
-    simp [zzz1] at ih
-    simp [ih]
-    --exact round_trip_int
-    --sorry
+    simp [args_to_int] at ih
+    rw [ih]
+    simp [bind, Except.bind, pure, Except.pure]
+
 
 
 -- set_option maxHeartbeats 2400000

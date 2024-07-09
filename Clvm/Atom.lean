@@ -82,14 +82,8 @@ instance : CoeOut (Array UInt8) Atom where
   coe := array_of_uint8_to_atom
 
 
-def list_nat_to_nat (atom: List Nat) (acc: Nat) : Nat :=
-  match atom with
-  | [] => acc
-  | a::b => list_nat_to_nat b ((acc <<< 8) + a)
-
-
 def atom_to_nat (atom: Atom) : Nat :=
-  list_nat_to_nat atom.data 0
+  base_b_be_to_nat_inner 0 atom.data 256
 
 
 def atom_to_int (atom: Atom) : Int :=

@@ -148,8 +148,8 @@ def sha256_32 (msg : Array UInt8) : Array UInt32 :=
     #[final.a, final.b, final.c, final.d, final.e, final.f, final.g, final.h]
 
 
-def u32_to_u8 (x : UInt32) : Array UInt8 :=
-  #[(x >>> 24).toUInt8, (x >>> 16).toUInt8, (x >>> 8).toUInt8, x.toUInt8]
+def u32_to_u8 (x : UInt32) : List UInt8 :=
+  [(x >>> 24).toUInt8, (x >>> 16).toUInt8, (x >>> 8).toUInt8, x.toUInt8]
 
 
 def hex_u32 (x : UInt32) : String :=
@@ -167,14 +167,14 @@ def test_str := a_str ++ a_str
 
 def sha256_bytes (msg : List Nat) : List Nat :=
   let u32s := sha256_32 (msg.toArray.map UInt8.ofNat)
-  let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
+  let r : List (List UInt8) := (u32s.map u32_to_u8).toList
   let s: List UInt8 := r.join
   s.map UInt8.toNat
 
 
 def sha256 (msg : List Nat) : Atom :=
   let u32s := sha256_32 (msg.toArray.map UInt8.ofNat)
-  let r : List (List UInt8) := ((u32s.map u32_to_u8).map Array.toList).toList
+  let r : List (List UInt8) := (u32s.map u32_to_u8).toList
   let s: List UInt8 := r.join
   let sn: List Nat := s.map UInt8.toNat
   have hs: ∀ x, x ∈ s.map UInt8.toNat → x ≤ 255 := by

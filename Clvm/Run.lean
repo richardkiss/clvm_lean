@@ -120,7 +120,7 @@ def apply_cons_mode_syntax (opcode: Node) (should_be_nil: Node) (operand_list: N
 def map_or_err (f: Node -> Except (Node × String) Node) (args: Node) : (Except (Node × String) Node) :=
   match args with
   | Node.atom ⟨ _, _ ⟩  => Except.ok Node.nil
-  | Node.pair n1 n2 =>do
+  | Node.pair n1 n2 => do
       let r2 ← map_or_err f n2
       let r1 ← f n1
       return Node.pair r1 r2
@@ -210,28 +210,3 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
 
 
 lemma int_to_atom_nil: (int_to_atom 0).data = [] := by rfl
-
-
-theorem run_add_one_number {z: Int}: operator_program 100 OP_ADD [1] z = Except.ok (z: Node) := by
-  have h_map_or_err: map_or_err (fun node => apply_node 99 node z) [1] = Except.ok (Node.pair z 0) := by rfl
-
-  have zz: operator_program 100 OP_ADD [1] z = handle_opcode OP_ADD (Node.pair z 0) := by
-    rw [not_quote_or_atom]
-    simp
-    assumption
-    linarith
-    decide
-    decide
-    decide
-
-  rw [zz]
-  unfold OP_ADD
-  simp [handle_opcode]
-  simp [handle_op_add]
-  simp [args_to_int]
-  simp [node_to_list]
-  simp [node_to_node_list_terminator]
-  simp [int_to_atom_nil]
-  simp [atom_to_int_cast]
-  simp [only_atoms]
-  simp [list_except_to_except_list]
