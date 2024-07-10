@@ -15,7 +15,6 @@ import Clvm.Atom
 import Clvm.Ints.Basic
 import Clvm.Puzzles.Apply
 import Clvm.Puzzles.Casts
-import Clvm.Puzzles.Results
 import Clvm.Run
 
 import Clvm.HalfBaked

@@ -6,8 +6,6 @@ import Clvm.Ints.Basic
 import Clvm.Node
 import Clvm.Run
 
-import Clvm.Puzzles.Results
-
 
 def Q1 : Node := Node.pair 1 1
 

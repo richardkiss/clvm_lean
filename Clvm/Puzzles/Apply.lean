@@ -7,7 +7,6 @@ import Clvm.Node
 import Clvm.Run
 
 import Clvm.Puzzles.Casts
-import Clvm.Puzzles.Results
 
 
 section Apply
