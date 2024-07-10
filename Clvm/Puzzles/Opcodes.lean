@@ -29,8 +29,9 @@ def quote_one : Node := h2n! "ff0101"
 
 -- n is a node. We have (a (q . n) 0) => n
 
-theorem run_quote_x_is_x { n: Node } : apply (Node.pair 1 n) Node.nil = Except.ok n := by
-  simp [apply]
+theorem run_quote_x_is_x { n: Node } : bruns_to (Node.pair 1 n) Node.nil n := by
+  simp [bruns_to]
+  use 1
   unfold apply_node
   simp [small_int_to_atom 1, OP_Q]
 
@@ -44,27 +45,30 @@ theorem replace_quote_one_r_with_x_is_quote_x { x: Node } : replace quote_one [R
   rw [hq]
   simp [replace]
   simp [compose_paths, TOP, nodepath_for_char, split_replacements, split_replacements.loop]
-  ring_nf
   simp [highest_bit, highest_bit.count_bits]
-  ring_nf
-  sorry
+  simp [HShiftLeft.hShiftLeft, instHShiftLeftOfShiftLeft]
+  unfold ShiftLeft.shiftLeft Nat.instShiftLeft Nat.shiftLeft
+  simp [split_replacements.loop]
+
 
 -- try following paths
 
 -- brun '2 (x . y)' => x
-theorem follow_path_2 { x y: Node } : apply 2 (Node.pair x y) = Except.ok x := by
-  simp [apply]
+theorem follow_path_2 { x y: Node } : bruns_to 2 (Node.pair x y) x := by
+  simp [bruns_to]
+  use 1
   unfold apply_node atom_to_nat
-  simp [(small_int_to_atom 2)]
+  simp [small_int_to_atom]
   simp [base_b_be_to_nat_inner]
   simp [node_at]
   unfold node_at_wdepth node_at_wdepth
-  rfl
+  simp
 
 
 -- brun '3 (x . y)' => y
-theorem follow_path_3 { x y: Node } : apply 3 (Node.pair x y) = Except.ok y := by
-  simp [apply]
+theorem follow_path_3 { x y: Node } : bruns_to 3 (Node.pair x y) y := by
+  simp [bruns_to]
+  use 1
   unfold apply_node atom_to_nat
   simp [(small_int_to_atom 3)]
   simp [base_b_be_to_nat_inner]
@@ -76,8 +80,9 @@ theorem follow_path_3 { x y: Node } : apply 3 (Node.pair x y) = Except.ok y := b
 def if_example_true : Node := [3, (Node.pair 1 1), 2, 3]
 
 -- brun (i (q . 1) 2 3) (x . y) => x
-theorem check_if_true { x y: Node } : apply if_example_true (Node.pair x y) = Except.ok x := by
-  simp [apply]
+theorem check_if_true { x y: Node } : bruns_to if_example_true (Node.pair x y) x := by
+  simp [bruns_to]
+  use 2
   unfold apply_node
   simp
   simp [if_example_true, node_list_to_node]
@@ -100,8 +105,9 @@ theorem check_if_true { x y: Node } : apply if_example_true (Node.pair x y) = Ex
 def if_example_false : Node := [3, (Node.pair 1 0), 2, 3]
 
 -- brun (i (q . 0) 2 3) (x . y) => y
-theorem check_if_false { x y: Node } : apply if_example_false (Node.pair x y) = Except.ok y := by
-  simp [apply]
+theorem check_if_false { x y: Node } : bruns_to if_example_false (Node.pair x y) y := by
+  simp [bruns_to]
+  use 2
   unfold apply_node
   simp
   simp [if_example_false, node_list_to_node]
@@ -120,8 +126,9 @@ theorem check_if_false { x y: Node } : apply if_example_false (Node.pair x y) = 
   simp [int_to_atom, int_to_twos_comp, twos_comp_to_int, is_msb_set, nat_to_base_b_be, base_b_be_to_nat, nat_to_base_b_be_partial, digit_count, Zero.zero]
 
 -- brun (+) n => 0
-theorem run_add_nil_is_0 { n: Node } : apply (Node.pair OP_ADD Node.nil) n = Except.ok 0 := by
-  simp [apply]
+theorem run_add_nil_is_0 { n: Node } : bruns_to (Node.pair OP_ADD Node.nil) n 0 := by
+  simp [bruns_to]
+  use 1
   unfold apply_node
   simp [OP_ADD]
   simp [(small_int_to_atom 16), OP_Q]
@@ -136,8 +143,9 @@ theorem run_add_nil_is_0 { n: Node } : apply (Node.pair OP_ADD Node.nil) n = Exc
 def cons_example : Node := [4, 2, 3]
 
 -- brun (c 2 3) (x . y) => (x . y)
-theorem run_cons { x y: Node } : apply cons_example (Node.pair x y) = Except.ok (Node.pair x y) := by
-  simp [apply]
+theorem run_cons { x y: Node } : bruns_to cons_example (Node.pair x y) (Node.pair x y) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -152,8 +160,9 @@ theorem run_cons { x y: Node } : apply cons_example (Node.pair x y) = Except.ok 
 
 
 -- brun (f 1) (x . y) => x
-theorem run_first { x y: Node } : apply [OP_F, 1] (Node.pair x y) = Except.ok x := by
-  simp [apply]
+theorem run_first { x y: Node } : bruns_to [OP_F, 1] (Node.pair x y) x := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -164,8 +173,9 @@ theorem run_first { x y: Node } : apply [OP_F, 1] (Node.pair x y) = Except.ok x 
   simp [handle_opcode_for_atom, handle_opcode, handle_op_f]
 
 -- brun (r 1) (x . y) => y
-theorem run_rest { x y: Node } : apply [OP_R, 1] (Node.pair x y) = Except.ok y := by
-  simp [apply]
+theorem run_rest { x y: Node } : bruns_to [OP_R, 1] (Node.pair x y) y := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -180,8 +190,9 @@ theorem op_list { x: Node } : handle_op_l [x] = Except.ok (if is_atom x then Nod
   cases x <;> rfl
 
 -- brun (l 1) x => 0 or 1
-theorem run_list { x: Node } : apply [OP_L, 1] x = Except.ok (if is_atom x then Node.nil else Node.one) := by
-  simp [apply]
+theorem run_list { x: Node } : bruns_to [OP_L, 1] x (if is_atom x then Node.nil else Node.one) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -199,8 +210,9 @@ def strlen_example : Node := [OP_STRLEN, 1]
 #eval ((Except.ok (Node.atom [0])): Except (Node × String) Node)
 
 -- brun (strlen 1) x => a.size (where a is the atom for x)
-theorem run_strlen { a: Atom } : apply strlen_example (Node.atom a) = (Except.ok (Node.atom a.length) : Except (Node × String) Node) := by
-  simp [apply]
+theorem run_strlen { a: Atom } : bruns_to strlen_example (Node.atom a) (Node.atom a.length)  := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -209,7 +221,6 @@ theorem run_strlen { a: Atom } : apply strlen_example (Node.atom a) = (Except.ok
   simp [node_at, atom_to_nat, node_at_wdepth, base_b_be_to_nat_inner]
   simp [bind, Except.bind, Except.pure, pure]
   simp [handle_opcode_for_atom, handle_opcode, handle_op_strlen]
-
 
 
 -----
@@ -229,8 +240,9 @@ theorem op_sha256 { a: Atom } : handle_op_sha256 [Node.atom a] = Except.ok (Node
 
 
 
-theorem run_sha256_atom { a: Atom } : apply [OP_SHA256, 1] (Node.atom a) = Except.ok (Node.atom (sha256 a)) := by
-  simp [apply]
+theorem run_sha256_atom { a: Atom } : bruns_to [OP_SHA256, 1] (Node.atom a) (Node.atom (sha256 a)) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp
   unfold apply_node map_or_err
@@ -243,8 +255,9 @@ theorem run_sha256_atom { a: Atom } : apply [OP_SHA256, 1] (Node.atom a) = Excep
   simp [bind, Except.bind, pure, Except.pure]
 
 
-theorem run_sha256_two_atoms { a1 a2: Atom } : apply [OP_SHA256, 2, 5] [a1, a2] = Except.ok (Node.atom (sha256 (a1 ++ a2))) := by
-  simp [apply]
+theorem run_sha256_two_atoms { a1 a2: Atom } : bruns_to [OP_SHA256, 2, 5] [a1, a2] (Node.atom (sha256 (a1 ++ a2))) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   unfold apply_node map_or_err
   unfold apply_node map_or_err
@@ -256,8 +269,9 @@ theorem run_sha256_two_atoms { a1 a2: Atom } : apply [OP_SHA256, 2, 5] [a1, a2] 
   rfl
 
 
-theorem run_sha256_three_atoms { a1 a2 a3: Atom } : apply [OP_SHA256, 2, 5, 11] [a1, a2, a3] = Except.ok (Node.atom (sha256 ((a1 ++ a2) ++ a3))) := by
-  simp [apply]
+theorem run_sha256_three_atoms { a1 a2 a3: Atom } : bruns_to [OP_SHA256, 2, 5, 11] [a1, a2, a3] (Node.atom (sha256 ((a1 ++ a2) ++ a3))) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp [node_list_to_node, OP_Q, OP_A]
   simp [small_int_to_atom, OP_SHA256]
@@ -298,12 +312,15 @@ def quoted_nodes (ns : List Node) : Node :=
 
 
 
-theorem run_add_nil: apply ([OP_ADD, 0]: Node) (0: Node) = Except.ok 0 := by
+theorem run_add_nil: bruns_to ([OP_ADD, 0]: Node) (0: Node) 0 := by
+  simp [bruns_to]
+  use 2
   rfl
 
 
-theorem run_add_one_number_1 {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = Except.ok (z: Node) := by
-  simp [apply]
+theorem run_add_one_number_1 {z: Int}: bruns_to ([OP_ADD, 1]: Node) (z: Node) (z: Node) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp [node_list_to_node, OP_Q, OP_A]
   simp [small_int_to_atom, OP_ADD]
@@ -320,8 +337,9 @@ theorem run_add_one_number_1 {z: Int}: apply ([OP_ADD, 1]: Node) (z: Node) = Exc
   simp [bind, Except.bind, Except.pure, pure]
 
 
-theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]: Node) = Except.ok ((z1 + z2): Node) := by
-  simp [apply]
+theorem run_add_two_numbers {z1 z2: Int}: bruns_to ([OP_ADD, 2, 5]: Node) ([z1, z2]: Node) ((z1 + z2): Node) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp [node_list_to_node, OP_Q, OP_A]
   simp [small_int_to_atom, OP_ADD]
@@ -339,8 +357,9 @@ theorem run_add_two_numbers {z1 z2: Int}: apply ([OP_ADD, 2, 5]: Node) ([z1, z2]
   simp [bind, Except.bind, Except.pure, pure]
 
 
-theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([(OP_ADD: Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Except.ok ((z1 + z2): Node) := by
-  simp [apply]
+theorem run_add_two_quoted_numbers {z1 z2: Int}: bruns_to ([(OP_ADD: Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil ((z1 + z2): Node) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp [node_list_to_node, OP_Q, OP_A]
   simp [small_int_to_atom, OP_ADD]
@@ -360,8 +379,9 @@ theorem run_add_two_quoted_numbers {z1 z2: Int}: apply ([(OP_ADD: Node), (Node.p
 #print axioms run_add_two_quoted_numbers
 
 
-theorem run_mul_two_quoted_numbers {z1 z2: Int}: apply ([((OP_MUL): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil = Except.ok ((z1 * z2): Node) := by
-  simp [apply]
+theorem run_mul_two_quoted_numbers {z1 z2: Int}: bruns_to ([((OP_MUL): Node), (Node.pair 1 z1), (Node.pair 1 z2)]: Node) Node.nil ((z1 * z2): Node) := by
+  simp [bruns_to]
+  use 2
   unfold apply_node map_or_err
   simp [node_list_to_node, OP_Q, OP_A]
   simp [small_int_to_atom, OP_MUL]
@@ -394,21 +414,27 @@ def quoted_atoms (as: List Atom) : Node :=
   quoted_nodes (as.map (fun a => Node.atom a))
 
 
-lemma map_err_quoted_atoms_is_ok (as: List Atom) {h_d: d ≠ 0} {env: Node} : map_or_err (apply_node d · env) (quoted_atoms as) = Except.ok as := by
-  induction as with
+lemma map_err_quoted_nodes_eq_nodes (ns: List Node) (h_d: d ≠ 0) {env: Node} : map_or_err (apply_node d · env) (quoted_nodes ns) = Except.ok ns := by
+  induction ns with
   | nil =>
     unfold map_or_err
-    simp [quoted_atoms, quoted_nodes, Except.bind, bind, Except.pure, pure, node_list_to_node]
+    simp [quoted_nodes, Except.bind, bind, Except.pure, pure, node_list_to_node]
 
   | cons head tail ih =>
     unfold map_or_err
-    unfold quoted_atoms quoted_nodes List.map
+    unfold quoted_nodes
     simp
     unfold quoted_atoms at ih
     rw [ih]
     simp [Except.bind, bind]
     unfold apply_node
     simp [h_d, quote_node, OP_Q, pure, Except.pure, node_list_to_node]
+
+
+lemma map_err_quoted_atoms_eq_atoms (as: List Atom) (h_d: d ≠ 0) {env: Node} : map_or_err (apply_node d · env) (quoted_atoms as) = Except.ok as := by
+  unfold quoted_atoms
+  simp [map_err_quoted_nodes_eq_nodes (as.map Node.atom) h_d]
+  rfl
 
 
 lemma args_to_int_atoms_ok {zs: List Int} : args_to_int (node_list_to_node (List.map Node.atom (zs.bind fun a => [int_to_atom a]))) = Except.ok zs := by
@@ -432,11 +458,9 @@ theorem run_add_n_numbers { zs: List Int } : bruns_to (Node.pair OP_ADD (quoted_
   simp [OP_Q, OP_A, handle_opcode_for_atom, handle_opcode]
   unfold handle_op_add
 
-  simp [map_err_quoted_atoms_is_ok]
+  simp [map_err_quoted_atoms_eq_atoms]
   simp [bind, Except.bind]
   simp [args_to_int_atoms_ok]
-
-
 
 
 ---- unfinished proofs go after this line
@@ -448,7 +472,7 @@ lemma concat_of_quoted_atoms_is_ok (as: List Atom): node_applies (Node.pair (Nod
   simp [atom_cast, max_255, OP_CONCAT, OP_Q, OP_A]
   simp [handle_opcode_for_atom, handle_opcode]
 
-  simp [map_err_quoted_atoms_is_ok]
+  simp [map_err_quoted_atoms_eq_atoms]
   simp [Except.bind, bind, Except.pure, pure]
 
   induction as with
@@ -483,7 +507,7 @@ theorem run_concat_atoms { nat_lists: List (List Nat) } : bruns_to (Node.pair OP
   simp [OP_Q, OP_A, handle_opcode_for_atom, handle_opcode]
   unfold handle_op_concat
 
-  simp [map_err_quoted_atoms_is_ok]
+  simp [map_err_quoted_atoms_eq_atoms]
   simp [bind, Except.bind]
   induction nat_lists with
   | nil => simp [node_list_to_node, node_to_list, Atom.to, atom_cast]
