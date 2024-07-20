@@ -242,4 +242,88 @@ lemma applies_unique_at_next (k0: Nat) : applies_unique_at k0 → applies_unique
       simp [(h_applies (Except.as_ok (apply_node k0 n_p env)) (Except.as_ok (apply_node k0 n_env env)) h_r_nenv)]
 
 
+lemma applies_unique_at_0 : applies_unique_at 0 := by
+  intro n env h_is_ok
+  unfold apply_node at h_is_ok
+  simp [is_ok, Except.err] at h_is_ok
+
+
+lemma applies_unique_at_any (d : Nat): applies_unique_at d := by
+  induction d with
+  | zero => exact applies_unique_at_0
+  | succ n ih => exact applies_unique_at_next n ih
+
+
+def ok_inducts {α : Type} (Ok: α → Prop) (F : Nat → α): Prop := ∀ n, Ok (F n) → F n = F n.succ
+
+
+lemma ok_inducts_ok_f_n_succ {α : Type} (Ok: α → Prop) (F : Nat → α):
+  ok_inducts Ok F → ∀ n, Ok (F n) → Ok (F n.succ) := by
+  intro h n h_ok
+  simp only [Nat.succ_eq_add_one, ← h n h_ok, h_ok]
+
+
+lemma ok_inducts_once {α : Type} (Ok: α → Prop) (F : Nat → α):
+  ok_inducts Ok F → ∀ a0 a1, Ok (F a0) → Ok (F (a0 + a1)) := by
+  intro h a0 a1 h0
+  induction a1 with
+  | zero => simp ; assumption
+  | succ a1 ih => apply ok_inducts_ok_f_n_succ Ok F h (a0 + a1) ih
+
+
+lemma ok_inducts_forever {α : Type} (Ok: α → Prop) (F : Nat → α):
+  ok_inducts Ok F → ∀ a0 a1, a1 ≥ a0 → Ok (F a0) → Ok (F a1) := by
+  intro h a0 a1 h1 h_ok
+  obtain h_prior := ok_inducts_once Ok F h a0 (a1 - a0) h_ok
+  simp only [ge_iff_le, h1, add_tsub_cancel_of_le] at h_prior
+  assumption
+
+
+lemma ok_converges_helper {α : Type} (Ok: α → Prop) (F : Nat → α):
+  ok_inducts Ok F → ∀ a0 a1, Ok (F a0) → F a0 = F (a0 + a1) := by
+    intro h0
+    intro a0 a1
+    induction a1 with
+    | zero => simp
+    | succ n ih =>
+      intro h
+      rw [ih h]
+      have h1 : Ok (F (a0 + n)) := by
+        apply ok_inducts_forever Ok F h0 a0 (a0 + n) (by linarith) h
+      apply (h0 (a0 + n) h1)
+
+
+
+
+
+lemma ok_converges_super_helper {α : Type} (Ok: α → Prop) (F : Nat → α):
+  ok_inducts Ok F → ∀ a0 a1 a2, Ok (F a0) → a1 ≥ a0 → a2 ≥ a0 → F a1 = F a2 := by
+  intro h0 a0 a1 a2 h1 h2 h3
+  obtain h4 := ok_converges_helper Ok F h0 a0 (a1-a0) h1
+  simp [h2] at h4
+  obtain h5 := ok_converges_helper Ok F h0 a0 (a2-a0) h1
+  simp [h3] at h5
+  rw [← h4, h5]
+
+
+theorem apply_node_converges_super: is_ok (apply_node k0 p e) → k1 ≥ k0 → k2 ≥ k0 → apply_node k1 p e = apply_node k2 p e := by
+  apply ok_converges_super_helper is_ok (apply_node · p e)
+  rw [ok_inducts]
+  intro n h
+
+  obtain h_ok_at_n := applies_unique_at_any n
+  simp [applies_unique_at] at h_ok_at_n
+  obtain h_inducts := h_ok_at_n p e h
+  unfold is_ok at h
+  simp [h_inducts]
+
+
+theorem apply_node_converges: is_ok (apply_node k0 p e) → k1 ≥ k0 → apply_node k0 p e = apply_node k1 p e := by
+  intro h0 h1
+  apply apply_node_converges_super
+  exact h0
+  linarith
+  exact h1
+
+
 end Apply

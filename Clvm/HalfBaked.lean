@@ -67,6 +67,9 @@ lemma proof_for_small_int (z: Int) (h_z_gt_0: z > 0) (h_z_lt_128: z < 128) : ∀
       linarith
 
 
+theorem zero_to_atom: int_to_atom 0 = Atom.mk [] (by decide) := by rfl
+
+
 theorem small_int_to_atom (z: Int) {h_z_gt_0: z > 0} {h_z_lt_128: z < 128}
   : int_to_atom z = ⟨ [z.natAbs], (proof_for_small_int z h_z_gt_0 h_z_lt_128) ⟩ := by
 
