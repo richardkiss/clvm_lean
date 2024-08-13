@@ -1,4 +1,3 @@
-import Mathlib.Data.Nat.Prime
 import Mathlib.Data.ZMod.Basic
 
 

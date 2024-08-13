@@ -14,7 +14,6 @@ import Clvm.Ecdsa.Jacobian
 import Clvm.Ecdsa.Secp256k1
 import Clvm.Ints.Bases
 
-import Mathlib.Data.Nat.Prime
 import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Tactic.Ring

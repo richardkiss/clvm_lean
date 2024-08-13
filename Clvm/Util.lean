@@ -1,4 +1,5 @@
 import Clvm.Serde
+import Clvm.String
 
 
 def h2n_parsed_node (hex: String) : Except (String × String) ParsedNode :=
@@ -51,9 +52,9 @@ def h_rest! (hex: String) : String := n2h (h2n_second! hex)
 
 
 
-theorem h2n_ff : hex = "ff" ++ s → is_ok (h2n hex) → h2n hex = Except.ok (Node.pair (h2n_first! s) (h2n_second! s)) := by
+theorem h2n_ff (s: String): is_ok (h2n hex) → hex = "ff" ++ s → h2n hex = Except.ok (Node.pair (h2n_first! s) (h2n_second! s)) := by
   intro h0 h1
-  obtain ⟨n, h2⟩ := h1
+  obtain ⟨n, h2⟩ := h0
 
   unfold h2n
 
@@ -69,7 +70,7 @@ theorem h2n_ff : hex = "ff" ++ s → is_ok (h2n hex) → h2n hex = Except.ok (No
 
   unfold h2n_parsed_node at h4
   unfold h2b_lc at h4
-  simp [h0] at h4
+  simp [h1] at h4
   simp [hex_pair_to_byte, hex_nibble_to_byte] at h4
   simp [bind, Except.bind, pure, Except.pure] at h4
   unfold bytes_to_parsed_node at h4
@@ -105,5 +106,37 @@ theorem h2n_ff : hex = "ff" ++ s → is_ok (h2n hex) → h2n hex = Except.ok (No
 
   simp [h2n_first!, h2n_parsed_node!, h2n_parsed_node, h5, bind, Except.bind, h6, pure, Except.pure]
 
-  simp [h2n_second!, h2n_second, h2n_parsed_node, h0, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte]
+  simp [h2n_second!, h2n_second, h2n_parsed_node, h1, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte]
   simp [bind, Except.bind, bytes_to_parsed_node, h5, h6, h7, pure, Except.pure]
+
+
+
+theorem h2n!_split (s: String): is_ok (h2n s) → s.take 2 = "ff" → h2n! s = Node.pair (h2n_first! (String.mk (s.data.drop 2))) (h2n_second! (String.mk (s.data.drop 2))) := by
+  intro h0 h1
+  have h: s = "ff" ++ s.drop 2 := by
+    rw [← h1]
+    apply string_take_drop s 2
+  unfold h2n!
+  rw [h2n_ff (s.drop 2) h0 h]
+  simp
+  constructor
+  rw [← String.data_drop s 2]
+  rw [← String.data_drop s 2]
+
+
+
+example: h2n! "ff01ff05ff09ff0a80" = Node.pair (Node.atom [1]) (Node.pair (Node.atom [5]) (Node.pair (Node.atom [9]) (Node.pair (Node.atom [10]) Node.nil))) := by
+  have h_ok: is_ok (h2n "ff01ff05ff09ff0a80") := by
+    simp [is_ok, h2n, Except.bind, bind, Except.pure, pure, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
+
+  have h_starts: "ff01ff05ff09ff0a80".take 2 = "ff" := by
+    rfl
+
+  simp [h2n!_split "ff01ff05ff09ff0a80" h_ok h_starts]
+  simp [h2n_first!, h2n_parsed_node!, h2n_parsed_node,
+    h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
+    bind, Except.bind, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
+
+  simp [h2n_second!, h2n_second, h2n_parsed_node!, h2n_parsed_node,
+    h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
+    bind, Except.bind, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]

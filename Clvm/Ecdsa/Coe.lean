@@ -7,14 +7,12 @@ import Init.Data.Nat
 
 import Mathlib
 
-import Mathlib.Data.Nat.Prime
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Tactic.Ring
 
 import Mathlib.Tactic
---import Mathlib.Tactic.LibrarySearch
 import Mathlib.Tactic.FieldSimp
 
 import Clvm.Ecdsa.Affine
