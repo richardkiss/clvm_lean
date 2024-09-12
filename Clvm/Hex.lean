@@ -30,6 +30,12 @@ def hex_pair_to_byte (c1 c2: Char) : Except (String × String) Nat := do
   Except.ok (n1 * 16 + n2)
 
 
+def hex_pair_to_byte! (c1 c2: Char) : Nat :=
+  match hex_pair_to_byte c1 c2 with
+  | Except.ok n => n
+  | Except.error _ => 0
+
+
 def h2b_lc (s: List Char) : Except (String × String) (List Nat) :=
   match s with
   | c1 :: c2 :: rest => do
