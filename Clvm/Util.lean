@@ -14,11 +14,6 @@ def h2n (hex: String) : Except (String × String) Node := do
   return (← (h2n_parsed_node hex)).node
 
 
-def h2n! (hex: String) : Node :=
-  match h2n hex with
-  | Except.ok node => node
-  | Except.error _ => Node.nil
-
 
 def h2n_valid (hex: String) := ∃ (n: Node), h2n hex = Except.ok n -- ∧ n2h n = hex
 
@@ -27,6 +22,9 @@ def h2n_parsed_node! (hex: String) : ParsedNode :=
   match h2n_parsed_node hex with
   | Except.ok pn => pn
   | Except.error _ => ParsedNode.mk Node.nil [0x80]
+
+
+def h2n! (hex: String) : Node := (h2n_parsed_node! hex).node
 
 
 def h2n_first! (hex: String) : Node := (h2n_parsed_node! hex).node
@@ -51,22 +49,19 @@ def h_first! (hex: String) : String := n2h (h2n! hex)
 def h_rest! (hex: String) : String := n2h (h2n_second! hex)
 
 
+lemma h2n_ok_parsed_node_ok (s: String): is_ok (h2n s) → is_ok (h2n_parsed_node s) := by
+  intro h
+  by_contra h_c
+  obtain ⟨c, h1⟩ := not_ok h_c
+  simp [h2n, h1, bind, Except.bind, is_ok] at h
 
-theorem h2n_ff (s: String): is_ok (h2n hex) → hex = "ff" ++ s → h2n hex = Except.ok (Node.pair (h2n_first! s) (h2n_second! s)) := by
+
+theorem h2n_ff (s: String): is_ok (h2n s) → s = "ff" ++ s0 → h2n s = Except.ok (Node.pair (h2n_first! s0) (h2n_second! s0)) := by
   intro h0 h1
-  obtain ⟨n, h2⟩ := h0
 
-  unfold h2n
+  obtain ⟨pn, h4⟩ := h2n_ok_parsed_node_ok s h0
 
-  have h2n_ok: is_ok (h2n_parsed_node hex) := by
-    by_contra h_c
-    obtain ⟨c, h5⟩ := not_ok h_c
-    unfold h2n at h2
-    simp [bind, Except.bind, h5] at h2
-
-  obtain ⟨pn, h4⟩ := h2n_ok
-
-  simp [bind, Except.bind, h4, pure, Except.pure]
+  simp [h2n, bind, Except.bind, h4, pure, Except.pure]
 
   unfold h2n_parsed_node at h4
   unfold h2b_lc at h4
@@ -76,7 +71,7 @@ theorem h2n_ff (s: String): is_ok (h2n hex) → hex = "ff" ++ s → h2n hex = Ex
   unfold bytes_to_parsed_node at h4
   simp at h4
 
-  have h_ok_1: is_ok (h2b_lc s.data) := by
+  have h_ok_1: is_ok (h2b_lc s0.data) := by
     by_contra h_c
     obtain ⟨c, h5⟩ := not_ok h_c
     simp [bind, Except.bind, h5] at h4
@@ -110,19 +105,26 @@ theorem h2n_ff (s: String): is_ok (h2n hex) → hex = "ff" ++ s → h2n hex = Ex
   simp [bind, Except.bind, bytes_to_parsed_node, h5, h6, h7, pure, Except.pure]
 
 
+lemma h2n_first!_eq_h2n!: h2n_first! s = h2n! s := by rw [h2n_first!, h2n!]
 
-theorem h2n!_split (s: String): is_ok (h2n s) → s.take 2 = "ff" → h2n! s = Node.pair (h2n_first! (String.mk (s.data.drop 2))) (h2n_second! (String.mk (s.data.drop 2))) := by
+
+theorem h2n!_split (s: String): is_ok (h2n s) → s.take 2 = "ff" → h2n! s = Node.pair (h2n_first! (s.drop 2)) (h2n_second! (s.drop 2)) := by
   intro h0 h1
   have h: s = "ff" ++ s.drop 2 := by
     rw [← h1]
     apply string_take_drop s 2
-  unfold h2n!
-  rw [h2n_ff (s.drop 2) h0 h]
-  simp
-  constructor
-  rw [← String.data_drop s 2]
-  rw [← String.data_drop s 2]
 
+  have h_q := h2n_ff s h0 h
+  unfold h2n at h_q
+
+  obtain ⟨pn, h2⟩ := h2n_ok_parsed_node_ok s h0
+  unfold h2n! h2n_parsed_node!
+  simp [h2]
+  simp [h2, bind, pure, Except.pure, Except.bind] at h_q
+  rw [h_q]
+
+
+--#print h2n!_split
 
 
 example: h2n! "ff01ff05ff09ff0a80" = Node.pair (Node.atom [1]) (Node.pair (Node.atom [5]) (Node.pair (Node.atom [9]) (Node.pair (Node.atom [10]) Node.nil))) := by
