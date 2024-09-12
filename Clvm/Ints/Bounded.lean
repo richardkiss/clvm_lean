@@ -1,5 +1,5 @@
 import Clvm.Ints.TwosComplement
-
+import Lean.Meta.Tactic
 
 lemma mod_formula (a b: Nat) : a - ((a/b) * b) = a % b := by
   refine Nat.sub_eq_of_eq_add' ?h
@@ -96,30 +96,19 @@ lemma nat_to_base_b_be_form_bounded {hb: 256 > 1} {n : Nat }: n ≠ 0 → ∀ a 
 
 theorem int_to_twos_comp_bounded: ∀ n ∈ int_to_twos_comp z, n ≤ 255 := by
   rw [int_to_twos_comp]
-  if h_z_0: z = 0 then
-    simp [h_z_0]
-  else
-    simp [h_z_0]
-    if h_z_lt_0: z < 0 then
-      simp [h_z_lt_0]
-      rw [neg_to_twos_comp]
-      if h_msb: is_msb_set (neg_to_twos_comp.as_nat z) = true then
-        simp [h_msb]
-        unfold neg_to_twos_comp.as_nat neg_to_base_b_be
-        exact nat_to_base_b_be_partial_form_bounded h_z_0
-      else
-        simp [h_msb]
-        unfold neg_to_twos_comp.as_nat neg_to_base_b_be
-        exact nat_to_base_b_be_partial_form_bounded h_z_0
-    else
-      simp [h_z_lt_0]
-      rw [pos_to_twos_comp]
-      have h_abs_ne_0: Int.natAbs z ≠ 0 := by exact Int.natAbs_ne_zero.mpr h_z_0
-      if h_msb: is_msb_set (pos_to_twos_comp.as_nat (Int.natAbs z)) = true then
-        simp [h_msb]
-        unfold pos_to_twos_comp.as_nat
-        exact nat_to_base_b_be_form_bounded h_abs_ne_0
-      else
-        simp [h_msb]
-        unfold pos_to_twos_comp.as_nat
-        exact nat_to_base_b_be_form_bounded h_abs_ne_0
+  split_ifs with h_z_0 h_lt_0
+  · simp only [List.not_mem_nil, false_implies, implies_true]
+  · rw [neg_to_twos_comp]
+    split_ifs with h_msb
+    · exact nat_to_base_b_be_partial_form_bounded h_z_0
+    · simp only [neg_to_twos_comp.as_nat, neg_to_base_b_be, List.mem_cons, forall_eq_or_imp,      le_refl, true_and]
+      exact nat_to_base_b_be_partial_form_bounded h_z_0
+  rw [pos_to_twos_comp]
+  unfold pos_to_twos_comp.as_nat
+  have h_abs_ne_0: Int.natAbs z ≠ 0 := by exact Int.natAbs_ne_zero.mpr h_z_0
+  split_ifs with h_msb
+  · simp only [List.mem_cons, forall_eq_or_imp, zero_le, true_and]
+    apply nat_to_base_b_be_form_bounded
+    exact h_abs_ne_0
+  · apply nat_to_base_b_be_form_bounded
+    exact h_abs_ne_0

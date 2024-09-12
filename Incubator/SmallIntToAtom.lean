@@ -92,6 +92,7 @@ theorem small_int_to_atom (z: Int) {h_z_gt_0: z > 0} {h_z_lt_128: z < 128}
     linarith
   | negSucc k => simp only [gt_iff_lt, Int.negSucc_not_pos] at h_z_gt_0
 
+--#print small_int_to_atom
 
 /-
 lemma int_lt_nat_lt (m n: Nat): Int.ofNat m ≤ Int.ofNat n → m ≤ n := by

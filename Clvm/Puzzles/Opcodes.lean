@@ -17,7 +17,7 @@ import Clvm.Puzzles.Apply
 import Clvm.Puzzles.Casts
 import Clvm.Run
 
-import Clvm.HalfBaked
+import Incubator.SmallIntToAtom
 
 
 

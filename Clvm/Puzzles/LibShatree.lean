@@ -1,6 +1,5 @@
 import Mathlib
 
-import Clvm.HalfBaked
 import Clvm.Hex
 import Clvm.Node
 import Clvm.Run
@@ -9,6 +8,8 @@ import Clvm.Sha256
 import Clvm.Util
 
 import Clvm.Puzzles.Apply
+
+import Incubator.SmallIntToAtom
 
 import Lean.Elab.Tactic
 

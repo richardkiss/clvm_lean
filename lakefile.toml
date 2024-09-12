@@ -9,6 +9,9 @@ rev = "v4.10.0"
 [[lean_lib]]
 name = "Clvm"
 
+[[lean_lib]]
+name = "Incubator"
+
 [[lean_exe]]
 name = "Main"
 root = "Main"

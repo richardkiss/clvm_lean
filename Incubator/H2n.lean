@@ -5,6 +5,7 @@ import Clvm.String
 import Clvm.Util
 
 
+import Incubator.SmallIntToAtom
 
 
 import Lean
@@ -28,6 +29,7 @@ lemma h2b_single (h1 h2 : Char) :
 
 -- Define the custom syntax for the tactic
 syntax (name := hexToBytesTactic) "hex_to_bytes" term : tactic
+
 
 
 @[tactic hexToBytesTactic]
@@ -65,22 +67,16 @@ def evalHexToBytes : Tactic := fun stx => do
   | _ => throwError "Unsupported syntax"
 
 
--- Example usage
-example : h2b! "ff0022" = [255] ++ h2b! "0022" := by
-  hex_to_bytes "ff0022"
-  hex_to_bytes "0022"
-  hex_to_bytes "22"
 
 
-
-
-lemma peel_2_from_h2b : is_ok (h2b s) → s.data.length ≥ 2 → h2b! s = [hex_pair_to_byte! (s.data[0]!) (s.data[1]!)] ++ h2b! (s.drop 2) := by
+lemma peel_2_from_h2b: is_ok (h2b s) → s.data.length ≥ 2 → h2b! s = [hex_pair_to_byte! (s.data[0]!) (s.data[1]!)] ++ h2b! (s.drop 2) := by
   intro h h_len
   conv_lhs => simp [h2b!]
   simp [h2b] at h
   obtain ⟨ ns, h_ns ⟩ := h
   simp [h_ns]
   unfold h2b_lc at h_ns
+
 
   cases h_s: s.data with
   | nil => simp [h_s, String.length, List.length] at h_len
@@ -104,36 +100,21 @@ lemma peel_2_from_h2b : is_ok (h2b s) → s.data.length ≥ 2 → h2b! s = [hex_
 
       obtain ⟨ns0, h_ns0⟩ := this
       simp [h_ns0] at h_ns
-      simp [getElem!, hex_pair_to_byte!, h_b, h_ns, h2b!, h_s, h_t, h_ns0]
-
-
-example : h2b! "ff0022" = 255 :: h2b! "0022" := by
-  have h_ok: is_ok (h2b "ff0022") := by
-    conv in h2b _ =>
-      simp only [h2b, h2b_lc, bind, Except.bind, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower,
-        ↓Char.isValue, Char.reduceToNat, ge_iff_le, Nat.reduceLeDiff, and_false, ↓reduceIte,
-        decide_True, decide_False, Bool.and_false, Bool.false_eq_true, le_refl, Bool.and_self,
-        Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, and_true, tsub_eq_zero_of_le, zero_mul, add_zero]
-    simp only [is_ok, Except.ok.injEq, exists_eq']
-
-  have h_len: "ff0022".data.length ≥ 2 := by
-    simp only [↓Char.isValue, List.length_cons, List.length_singleton, Nat.succ_eq_add_one,
-      Nat.reduceAdd, ge_iff_le, Nat.reduceLeDiff]
-
-  conv in h2b! _ =>
-    simp [(peel_2_from_h2b h_ok h_len)]
-    simp [hex_pair_to_byte!, hex_pair_to_byte,
-      hex_nibble_to_byte, Char.toLower, Char.toNat, getElem!, UInt32.size, bind, Except.bind]
-    simp [String.drop, String.data_drop]
+      simp [decidableGetElem?, hex_pair_to_byte!, h_b, h_ns, h2b!, h_s, h_t, h_ns0]
 
 
 
+-- Example usage
+example : h2b! "ff0022" = [255] ++ h2b! "0022" := by
+  apply peel_2_from_h2b
+  simp [is_ok, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, Except.bind, bind]
+  simp [String.length]
+
+  --hex_to_bytes "ff0022"
+  --hex_to_bytes "0022"
+  --hex_to_bytes "22"
 
 
-@[simp]
-lemma string_drop {s: String}: s.drop n = String.mk (s.data.drop n) := by
-  ext n0 c
-  simp only [String.data_drop]
 
 
 example : h2b! "ff0022" = 255 :: h2b! "0022" := by
@@ -150,6 +131,15 @@ example : h2b! "ff0022" = 255 :: h2b! "0022" := by
       Nat.reduceAdd, ge_iff_le, Nat.reduceLeDiff]
 
   apply peel_2_from_h2b
+  assumption
+  assumption
+
+
+
+@[simp]
+lemma string_drop {s: String}: s.drop n = String.mk (s.data.drop n) := by
+  ext n0 c
+  simp only [String.data_drop]
 
 
 -- write a tactic `h2b_peel_2` that peels off the first two characters of a hex string
@@ -188,24 +178,12 @@ def h2b!_peel_imp : Tactic := fun _ => do
   match ← find_h2b!_lit_in_exp goalType with
   | none => throwError "Expected h2b! literal in the goal"
   | some s =>
-    --logInfo m!"Matched string literal: {s}"
-    if h: s.length < 2 then
+    if s.length < 2 then
       throwError "h2b! string must have at least 2 characters"
-    let firstTwo := s.take 2
     let rest := s.drop 2
-    --logInfo m!"firstTwo: {firstTwo}, rest {rest}"
-
-    -- Construct the rewrite expression
-    let rewrite ← `(h2b! "{$firstTwo}{$rest}" = (h2b! "{$firstTwo}") ++ (h2b! "{$rest}"))
-
-    --logInfo m!"rewrite: {rewrite}"
-    let s_ls: Lean.Syntax := Lean.Syntax.mkStrLit s!"0x{firstTwo}"
-    --logInfo m!"s_ls: {s_ls}"
-
     let first_byte := Syntax.mkNumLit (toString (hex_pair_to_byte! s.data[0]! s.data[1]!))
-    --logInfo m!"first_byte: {first_byte}"
 
-    Lean.Elab.Tactic.evalTactic (← `(tactic| have: h2b! $(Lean.Syntax.mkStrLit s) = [$(first_byte)] ++ h2b! $(Lean.Syntax.mkStrLit rest) := by
+    Lean.Elab.Tactic.evalTactic (← `(tactic| have: h2b! $(Lean.Syntax.mkStrLit s) = $(first_byte) :: h2b! $(Lean.Syntax.mkStrLit rest) := by
       apply peel_2_from_h2b
       simp only  [is_ok, h2b, h2b_lc, bind, Except.bind, hex_pair_to_byte, hex_nibble_to_byte,
 ↓Char.isValue, Char.reduceToLower, Char.reduceToNat, ge_iff_le, Nat.reduceLeDiff, decide_True,
@@ -216,24 +194,23 @@ Except.ok.injEq, exists_eq']
 Nat.reduceAdd, ge_iff_le, Nat.reduceLeDiff]
     ))
     Lean.Elab.Tactic.evalTactic (← `(tactic| rw [this] ))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| clear this ))
 
 
 -- Example usage
 example : h2b! "ff0022" = [255] ++ h2b! "0022" := by
   h2b!_peel
-
-
-
-example : h2b! "ff00228819" = k := by
-  h2b!_peel
-  h2b!_peel
-  h2b!_peel
-  h2b!_peel
-  h2b!_peel
   simp
-  simp [h2b!, h2b_lc]
 
 
+example : k = [255, 0, 34, 136, 25] → h2b! "ff00228819" = k := by
+  intro h
+  h2b!_peel
+  h2b!_peel
+  h2b!_peel
+  h2b!_peel
+  h2b!_peel
+  simp [h, h2b!, h2b_lc]
 
 
 /-
@@ -457,3 +434,116 @@ example: h2n! "ff01ff02ff03ff0480" = Node.pair (Node.atom (Atom.mk [1] (by decid
 #eval h2b "f0"
 
 -/
+
+
+
+
+
+-- Define the custom syntax for the tactic
+syntax (name := h2n!_peel_tactic) "h2n!_peel" : tactic
+
+-- recursively search for `h2b! LITERAL` in the expression
+def find_h2n!_lit_in_exp (e : Expr) : MetaM (Option String) := do
+    match e with
+    | Expr.app (.const `h2n! _) (.lit (.strVal s)) => return some s
+    | Expr.app f a =>
+      --logInfo m!"Expr.app: {f} {a}"
+      let r1 ← find_h2n!_lit_in_exp f
+      match r1 with
+      | some s => return some s
+      | none => find_h2n!_lit_in_exp a
+    | Expr.lam _ _ b _ => find_h2n!_lit_in_exp b  -- Search in lambda body
+    | Expr.letE _ _ v b _ =>
+      -- Search in let binding and body
+      return ← find_h2n!_lit_in_exp v <|> find_h2n!_lit_in_exp b
+    | Expr.mdata _ b => find_h2n!_lit_in_exp b  -- Search in metadata body
+    | Expr.proj _ _ b => find_h2n!_lit_in_exp b  -- Search in projections
+    | _ => return none
+
+
+
+@[tactic h2n!_peel_tactic]
+def h2n!_peel_imp : Tactic := fun _ => do
+  let goal ← getMainGoal
+  let goalType ← goal.getType
+  --logInfo m!"Full goal type: {goalType}"
+
+  match ← find_h2n!_lit_in_exp goalType with
+  | none => throwError "Expected h2n! literal in the goal"
+  | some s =>
+    --logInfo m!"s : {s}"
+    if s.length < 2 then
+      throwError "h2n! string must have at least 2 characters"
+    let rest := s.drop 2
+
+    let t1 := ← `(tactic| have: h2n! $(Lean.Syntax.mkStrLit s) = Node.pair (h2n_first! $(Lean.Syntax.mkStrLit rest))  (h2n_second! $(Lean.Syntax.mkStrLit rest)) := by
+      apply h2n!_split
+      simp [h2n, is_ok, bind, Except.bind, h2n_parsed_node,
+        h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node,
+        bytes_to_atom, Except.err, MAX_SINGLE_BYTE, pure, Except.pure]
+      rfl
+    )
+    --logInfo m!"t1: {t1}"
+    Lean.Elab.Tactic.evalTactic (← `(tactic| have: h2n! $(Lean.Syntax.mkStrLit s) = Node.pair (h2n_first! $(Lean.Syntax.mkStrLit rest))  (h2n_second! $(Lean.Syntax.mkStrLit rest)) := by
+      apply h2n!_split
+      simp only [is_ok, h2n, bind, Except.bind, h2n_parsed_node, h2b_lc, hex_pair_to_byte,
+    hex_nibble_to_byte, ↓Char.isValue, Char.reduceToLower, Char.reduceToNat, ge_iff_le,
+    Nat.reduceLeDiff, decide_True, decide_False, Bool.and_false, Bool.false_eq_true, ↓reduceIte,
+    le_refl, Bool.and_self, Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, tsub_eq_zero_of_le,
+    zero_mul, add_zero, bytes_to_parsed_node, OfNat.zero_ne_ofNat, bytes_to_atom, MAX_SINGLE_BYTE,
+    zero_le, Nat.reduceEqDiff, pure, Except.pure, Except.ok.injEq, exists_eq']
+
+      simp only [substring_take, ↓Char.isValue, List.take_cons_succ, List.take_zero, String.reduceMk]
+    ))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| rw [this] ))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| clear this ))
+
+
+
+example : h2n! "ff0022" = Node.pair (h2n_first! "0022")  (h2n_second! "0022") := by
+  apply h2n!_split
+
+  simp only [is_ok, h2n, bind, Except.bind, h2n_parsed_node, h2b_lc, hex_pair_to_byte,
+    hex_nibble_to_byte, ↓Char.isValue, Char.reduceToLower, Char.reduceToNat, ge_iff_le,
+    Nat.reduceLeDiff, decide_True, decide_False, Bool.and_false, Bool.false_eq_true, ↓reduceIte,
+    le_refl, Bool.and_self, Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, tsub_eq_zero_of_le,
+    zero_mul, add_zero, bytes_to_parsed_node, OfNat.zero_ne_ofNat, bytes_to_atom, MAX_SINGLE_BYTE,
+    zero_le, Nat.reduceEqDiff, pure, Except.pure, Except.ok.injEq, exists_eq']
+
+  simp only [substring_take, ↓Char.isValue, List.take_cons_succ, List.take_zero, String.reduceMk]
+
+
+
+example : h2n! "ff8022" = Node.pair 0 34 := by
+  h2n!_peel
+
+  simp only [Node.pair.injEq]
+
+  constructor
+
+  simp [h2n_first!, h2n_parsed_node!, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
+    Except.pure, pure, bind, Except.bind, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
+
+  unfold OfNat.ofNat Node.instOfNat int_to_atom int_to_twos_comp
+  simp [Int.ofNat]
+
+
+  simp [h2n_second!, h2n_second, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
+    Except.pure, pure, bind, Except.bind, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
+
+  simp [atom_cast, max_255]
+  simp [OfNat.ofNat]
+  simp [small_int_to_atom]
+
+
+
+
+example : h2n! "ff0022" = Node.pair (h2n_first! "0022") (h2n_second! "0022") := by
+  apply h2n!_split
+  simp [h2n, is_ok, bind, Except.bind, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
+    bytes_to_parsed_node, bytes_to_atom, Except.err, MAX_SINGLE_BYTE, pure, Except.pure]
+  exact Eq.refl ("ff0022".take 2)
+
+
+
+--#lint
