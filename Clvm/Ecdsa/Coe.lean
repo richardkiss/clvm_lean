@@ -31,7 +31,7 @@ theorem affine_to_jac_works {curve : Curve} {x y z : ZMod curve.p} :
     exact h0
 
 
-def affine_ni_to_jacobian {curve : Curve} (ap : AffinePointNotInfinity curve) : JacobianPoint curve :=
+def affine_ni_to_jacobian {curve : Curve} (ap : FiniteAffinePoint curve) : JacobianPoint curve :=
   let x := ap.x
   let y := ap.y
   let z := 1
@@ -84,7 +84,7 @@ def jacobian_to_affine {curve : Curve} (jp : JacobianPoint curve) (is_unit: IsUn
         _ = (w ^ 6) * 0 := by rw [p1]
         _ = 0 := by ring
 
-    AffinePoint.mk (AffinePointNotInfinity.mk x' y' new_proof)
+    AffinePoint.mk (FiniteAffinePoint.mk x' y' new_proof)
 
 
 
@@ -92,5 +92,5 @@ instance affineCoeJacobian {curve : Curve} : Coe (AffinePoint curve) (JacobianPo
   coe := affine_to_jacobian
 
 
-instance affineNotInfinityCoeJacobian {curve : Curve} : Coe (AffinePointNotInfinity curve) (JacobianPoint curve) where
+instance affineNotInfinityCoeJacobian {curve : Curve} : Coe (FiniteAffinePoint curve) (JacobianPoint curve) where
   coe := affine_ni_to_jacobian

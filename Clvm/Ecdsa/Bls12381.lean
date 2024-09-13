@@ -14,7 +14,7 @@ def CurveBLS12381 := Curve.mk bls_prime bls_prime_is_prime 0 4
 def bls_gen_x : ZMod CurveBLS12381.p := ⟨ 3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507, by decide⟩
 def bls_gen_y : ZMod CurveBLS12381.p := ⟨ 1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569, by decide⟩
 
-def generator_bls12381_g1 : JacobianPoint CurveBLS12381 := AffinePoint.mk (AffinePointNotInfinity.mk bls_gen_x bls_gen_y (by sorry))
+def generator_bls12381_g1 : JacobianPoint CurveBLS12381 := AffinePoint.mk (FiniteAffinePoint.mk bls_gen_x bls_gen_y (by sorry))
 
 /-
 #eval jacobian_to_affine (generator_bls12381_g1 + generator_bls12381_g1 + generator_bls12381_g1)
@@ -52,7 +52,7 @@ def serialize_point (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
 #eval serialize_point (2001 * generator_bls12381_g1)
 
 
-def points_for_x {curve : Curve} (x : ZMod curve.p) : (AffinePointNotInfinity curve) × (AffinePointNotInfinity curve) :=
+def points_for_x {curve : Curve} (x : ZMod curve.p) : (FiniteAffinePoint curve) × (FiniteAffinePoint curve) :=
   let alpha := x * x * x + curve.a * x + curve.b
   let y0 := alpha ^ ((curve.p + 1) / 4)
   let y1 := -y0
@@ -77,7 +77,7 @@ def deserialize_point (bytes : Array UInt8) : Option (JacobianPoint CurveBLS1238
       let x : Nat := new_x_bytes.foldl (fun acc b => acc * 256 + b.toNat) 0
       let _x_mod : ZMod CurveBLS12381.p := x % CurveBLS12381.p
       let points := points_for_x x
-      let chosen_point: AffinePointNotInfinity CurveBLS12381 := (
+      let chosen_point: FiniteAffinePoint CurveBLS12381 := (
         if x0 &&& 0b100000 = 0 then
           points.1
         else

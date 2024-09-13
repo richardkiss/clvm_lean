@@ -89,7 +89,7 @@ theorem exp_alpha_sqrt {curve : Curve} (y : ZMod curve.p) : (pow_zmod_fast y ((c
   sorry
 
 
-def points_for_x {curve : Curve} (x : ZMod curve.p) : (AffinePointNotInfinity curve) × (AffinePointNotInfinity curve) :=
+def points_for_x {curve : Curve} (x : ZMod curve.p) : (FiniteAffinePoint curve) × (FiniteAffinePoint curve) :=
   let alpha : ZMod curve.p := x ^ 3 + curve.a * x + curve.b
   have halpha: alpha = x ^ 3 + curve.a * x + curve.b := by rfl
 
@@ -116,7 +116,7 @@ def points_for_x {curve : Curve} (x : ZMod curve.p) : (AffinePointNotInfinity cu
     _ = y0^2 - x^3 - curve.a * x - curve.b := by ring
     _ = 0 := proof_0
 
-  let t : (AffinePointNotInfinity curve) × (AffinePointNotInfinity curve) :=
+  let t : (FiniteAffinePoint curve) × (FiniteAffinePoint curve) :=
     if y0_nat < y1_nat then
       ⟨ ⟨x, y0, proof_0⟩, ⟨x, y1, proof_1⟩ ⟩
     else
@@ -137,7 +137,7 @@ def deserialize_point (bytes : List Nat) : Option (JacobianPoint CurveBLS12381) 
       let x : Nat := base_b_be_to_nat new_x_bytes 256
       let x_mod : ZMod CurveBLS12381.p := x % CurveBLS12381.p
       let points := points_for_x x_mod
-      let chosen_point: AffinePointNotInfinity CurveBLS12381 := (
+      let chosen_point: FiniteAffinePoint CurveBLS12381 := (
         if x0 &&& 0b100000 = 0 then
           points.1
         else
