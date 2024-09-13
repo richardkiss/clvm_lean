@@ -1,8 +1,8 @@
 import Clvm.Atom
 import Clvm.Casts
+import Clvm.H2n
 import Clvm.Serde
 import Clvm.Sha256
-import Clvm.Util
 
 /-! sign-extend the given array to the given size -/
 def extend (a : Array Nat) (size : Nat) : Array Nat :=

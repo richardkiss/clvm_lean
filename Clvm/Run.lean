@@ -1,8 +1,8 @@
+import Clvm.H2n
 import Clvm.Node
 import Clvm.Opcodes
 import Clvm.Serde
 import Clvm.Sha256
-import Clvm.Util
 
 
 def OP_Q := 0x01
