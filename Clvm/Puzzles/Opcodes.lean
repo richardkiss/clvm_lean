@@ -45,8 +45,6 @@ theorem replace_quote_one_r_with_x_is_quote_x { x: Node } : replace quote_one [R
   simp [replace]
   simp [compose_paths, TOP, nodepath_for_char, split_replacements, split_replacements.loop]
   simp [highest_bit, highest_bit.count_bits]
-  simp [HShiftLeft.hShiftLeft, instHShiftLeftOfShiftLeft]
-  unfold ShiftLeft.shiftLeft Nat.instShiftLeft Nat.shiftLeft
   simp [split_replacements.loop]
 
 
@@ -205,7 +203,7 @@ theorem run_list { x: Node } : bruns_to [OP_L, 1] x (if is_atom x then Node.nil 
 
 def strlen_example : Node := [OP_STRLEN, 1]
 
-#eval apply strlen_example (Atom.to [1, 2, 3])
+#eval! apply strlen_example (Atom.to [1, 2, 3])
 #eval ((Except.ok (Node.atom [0])): Except (Node × String) Node)
 
 -- brun (strlen 1) x => a.size (where a is the atom for x)

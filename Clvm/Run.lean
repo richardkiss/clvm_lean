@@ -126,7 +126,7 @@ def map_or_err (f: Node -> Except (Node × String) Node) (args: Node) : (Except 
       return Node.pair r1 r2
 
 
-#eval node_at (atom_to_nat [0x00, 0x02]) (h2n! "ff7701")
+#eval! node_at (atom_to_nat [0x00, 0x02]) (h2n! "ff7701")
 
 
 def exactly_two_args (args: Node) : Except (Node × String) (Node × Node) :=
@@ -181,10 +181,10 @@ def rh (hex: String) : String := toString (apply (h2n! hex) (h2n! "00"))
 
 def my_tree: Node := h2n! "ff8474686973ff826973ffff02847465737480"
 
-#eval (n2h my_tree)
-#eval toString (apply (Node.atom [11]) my_tree)
+#eval! (n2h my_tree)
+#eval! toString (apply (Node.atom [11]) my_tree)
 
-#eval rh "ff14ffff010affff010380"
+#eval! rh "ff14ffff010affff010380"
 
 
 ---
@@ -210,7 +210,7 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
   rw [h_map_or_err]
 
 
-#eval map_or_err (fun node => apply_node 99 node 10) (Node.atom (Atom.to [1]))
+#eval! map_or_err (fun node => apply_node 99 node 10) (Node.atom (Atom.to [1]))
 
 
 lemma int_to_atom_nil: (int_to_atom 0).data = [] := by rfl

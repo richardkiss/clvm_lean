@@ -10,6 +10,7 @@ import Clvm.Util
 import Clvm.Puzzles.Apply
 
 import Incubator.SmallIntToAtom
+import Incubator.H2n
 
 import Lean.Elab.Tactic
 
@@ -97,31 +98,6 @@ macro "resolve_opcode" : tactic => `(tactic|
     ]
 )
 
-@[app_unexpander Node.pair]
-def unexpNodePair : Lean.PrettyPrinter.Unexpander
-  | `($(_) $a $b) => `(($a . $b))
-  | _ => throw ()
-
-/-
-
-open Lean PrettyPrinter Delaborator SubExpr
-
-def foo : Nat → Nat := fun x => 42
-
-@[delab app.foo]
-def delabFoo : Delab := do
-  `(1)
-
-
-@[delab app.Node.pair]
-def delabNode : Delab := do
-  `(1)
-
--/
-
---#eval (h2n! "ff8080")
---#check foo
---#check foo 13
 
 def sha256_tree_hash_node (node: Node) : Atom :=
   match node with
@@ -206,7 +182,76 @@ set_option maxRecDepth 1000
 lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pair sha256tree_func (Node.pair (Node.atom a) 0)) (Node.atom (sha256_tree_hash_node (Node.atom a))) := by
   use 50
   simp only [sha256tree_func]
-  simp [h2n!, h2n, h2n_parsed_node]
+  h2n!_peel
+
+  --h2n!_eval
+
+  conv in h2n! _ =>
+    simp [h2n!, h2n, h2n_parsed_node, h2n_parsed_node!]
+    unfold h2b_lc
+    simp [bind, Except.bind]
+    unfold hex_pair_to_byte hex_nibble_to_byte Char.toLower Char.ofNat
+    simp [Nat.isValidChar]
+    unfold bytes_to_parsed_node
+    simp [pure, Except.pure]
+    simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+
+  do_apply_node
+
+  --simp [exactly_two_args, Bind.bind, Except.bind, pure, Except.pure]
+
+  h2n!_peel
+
+
+  conv in h2n! _ =>
+    simp [h2n_second!, h2n_second, h2n!, h2n, h2n_parsed_node, h2n_parsed_node!]
+    unfold h2b_lc
+    simp [bind, Except.bind]
+    unfold hex_pair_to_byte hex_nibble_to_byte Char.toLower Char.ofNat
+    simp [Nat.isValidChar]
+    unfold bytes_to_parsed_node
+    simp [pure, Except.pure]
+    simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+
+  collapse
+
+  have: h2n_second! "02ffff03ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" =
+                  h2n!          "ffff03ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" := by
+      rfl
+
+  rw [this]
+  clear this
+
+
+
+  h2n!_peel
+  h2n!_peel
+  conv in h2n! _ =>
+    simp [h2n!, h2n, h2n_parsed_node, h2n_parsed_node!]
+    unfold h2b_lc
+    simp [bind, Except.bind]
+    unfold hex_pair_to_byte hex_nibble_to_byte Char.toLower Char.ofNat
+    simp [Nat.isValidChar]
+    unfold bytes_to_parsed_node
+    simp [pure, Except.pure]
+    simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+
+  have: h2n_second! "ff03ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" =
+    h2n! "ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" := by
+      simp [h2n_second!, h2n!]
+      sorry
+
+  simp [this]
+  clear this
+
+  h2n!_peel
+  h2n!_peel
+
+  unfold h2n_second! h2n_second
+  simp [h2n!, h2n, h2n_parsed_node, h2n_parsed_node!]
   unfold h2b_lc
   simp [bind, Except.bind]
   unfold hex_pair_to_byte hex_nibble_to_byte Char.toLower Char.ofNat
@@ -214,18 +259,17 @@ lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pa
   unfold bytes_to_parsed_node
   simp [pure, Except.pure]
   simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-
   simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
 
-  do_apply_node
-  collapse
+
+  simp [map_or_err]
+
   resolve_opcode
 
   do_apply_node
   collapse
   resolve_opcode
-
-  rfl
+  sorry
 
 
 --#eval sha256tree_prog
@@ -259,7 +303,7 @@ lemma tree_works: bruns_to sha256tree_func (Node.pair sha256tree_func (Node.pair
     simp [h_max_gt_0]
 
     rewrite (config := {occs := .pos [1]}) [sha256tree_func]
-    simp [h2n!, h2n, h2n_parsed_node]
+    simp [h2n!, h2n, h2n_parsed_node, h2n_parsed_node!]
     unfold h2b_lc
     simp [bind, Except.bind]
     unfold hex_pair_to_byte hex_nibble_to_byte Char.toLower Char.ofNat

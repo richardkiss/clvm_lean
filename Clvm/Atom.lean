@@ -1,5 +1,4 @@
 import Mathlib
-import Mathlib.Init.Set
 
 import Clvm.Ints.Basic
 
