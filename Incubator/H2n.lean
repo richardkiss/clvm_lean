@@ -2,11 +2,11 @@ import Mathlib
 
 import Clvm.H2n
 import Clvm.Hex
+import Clvm.SmallIntToAtom
 import Clvm.String
 
 
 import Incubator.H2b
-import Incubator.SmallIntToAtom
 import Incubator.String
 
 import Lean

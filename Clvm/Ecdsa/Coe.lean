@@ -46,8 +46,7 @@ def affine_to_jacobian {curve : Curve} (ap : AffinePoint curve) : JacobianPoint 
     let x : ZMod curve.p := 1
     let y : ZMod curve.p := 1
     let z : ZMod curve.p := 0
-    have proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := by
-      sorry
+    have proof : y ^ 2 - x ^ 3 - curve.a * x * z ^ 4 - curve.b * z ^ 6 = 0 := by ring
     ⟨x, y, z, proof⟩
 
 

@@ -4,10 +4,6 @@ import Clvm.Ecdsa.Curve
 import Clvm.Ecdsa.Jacobian
 
 
--- variable (p : ℕ) [Fact p.Prime]
-
-
-
 
 def secp256k1_prime := 115792089237316195423570985008687907853269984665640564039457584007908834671663
 def s7 : ZMod secp256k1_prime := ⟨7, by decide⟩
@@ -26,8 +22,3 @@ theorem legit_b : Gx * Gx * Gx + CurveSecp256k1.a * Gx + CurveSecp256k1.b = Gy *
 
 
 def generator_secp256k1 : JacobianPoint CurveSecp256k1 := JacobianPoint.mk Gx Gy 1 (by decide)
-
-
--- #eval jacobian_to_affine generator_secp256k1
-
--- #eval jacobian_to_affine (generator_secp256k1+ (generator_secp256k1 + generator_secp256k1))

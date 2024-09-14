@@ -1,11 +1,3 @@
-import Init.NotationExtra
-import Init.Data.Nat.Linear
-
-import Init.Prelude
-import Init.Data.UInt
-import Init.Data.Fin
-import Init.Data.Nat
-
 import Clvm.Ecdsa.Affine
 import Clvm.Ecdsa.Bls12381
 import Clvm.Ecdsa.Coe
@@ -36,7 +28,7 @@ def nat_to_bytes48 (n : Nat) : Array UInt8 :=
 
 
 def serialize_point_uint8 (p : JacobianPoint CurveBLS12381) : Array UInt8 :=
-  let ap : AffinePoint CurveBLS12381 := jacobian_to_affine p sorry
+  let ap : AffinePoint CurveBLS12381 := jacobian_to_affine p (by sorry)
   match ap with
   | AffinePoint.infinity =>
     #[0xc0] ++ (Array.mkArray 47 0)

@@ -6,10 +6,10 @@ import Clvm.Node
 import Clvm.Run
 import Clvm.Serde
 import Clvm.Sha256
+import Clvm.SmallIntToAtom
 
 import Clvm.Puzzles.Apply
 
-import Incubator.SmallIntToAtom
 import Incubator.H2n
 
 import Lean.Elab.Tactic

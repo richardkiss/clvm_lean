@@ -9,11 +9,11 @@ def base_b_be_to_neg (digits: List Nat) (b: Nat) : Int :=
 
 #eval base_b_be_to_neg [1, 2, 1, 0] 3
 
-/--
+
+/-!
 For a given n, this structure returns the `k` value s.t. `pow=b^k` exceeds `n` along
 with proofs that `pow = b ^ k` and `pow > n`.
 -/
-
 structure MinPowerExceeding (n b: Nat) :=
   k: Nat
   pow: Nat
@@ -54,8 +54,6 @@ def min_power_of_b_exceeding_n_and_exponent (b n: Nat) (hb: b>1) : MinPowerExcee
 
 example: (min_power_of_b_exceeding_n_and_exponent b n hb).pow > n := by exact
   (min_power_of_b_exceeding_n_and_exponent b n hb).gt
-
-
 
 #eval (min_power_of_b_exceeding_n_and_exponent 2 131000 (by linarith)).pow
 

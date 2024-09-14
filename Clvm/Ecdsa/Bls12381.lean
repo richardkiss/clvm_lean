@@ -14,7 +14,7 @@ def CurveBLS12381 := Curve.mk bls_prime bls_prime_is_prime 0 4
 def bls_gen_x : ZMod CurveBLS12381.p := ⟨ 3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507, by decide⟩
 def bls_gen_y : ZMod CurveBLS12381.p := ⟨ 1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569, by decide⟩
 
-def generator_bls12381_g1 : JacobianPoint CurveBLS12381 := AffinePoint.mk (FiniteAffinePoint.mk bls_gen_x bls_gen_y (by sorry))
+def generator_bls12381_g1 : JacobianPoint CurveBLS12381 := AffinePoint.mk (FiniteAffinePoint.mk bls_gen_x bls_gen_y (by rfl))
 
 /-
 #eval jacobian_to_affine (generator_bls12381_g1 + generator_bls12381_g1 + generator_bls12381_g1)

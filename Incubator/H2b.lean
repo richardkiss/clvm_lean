@@ -2,10 +2,8 @@ import Mathlib
 
 import Clvm.H2n
 import Clvm.Hex
+import Clvm.SmallIntToAtom
 import Clvm.String
-
-
-import Incubator.SmallIntToAtom
 
 
 import Lean

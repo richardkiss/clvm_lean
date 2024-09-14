@@ -12,12 +12,12 @@ import Init.Prelude
 import Init.Tactics
 
 import Clvm.Atom
-import Clvm.Ints.Basic
+--import Clvm.Ints.Basic
 import Clvm.Puzzles.Apply
 import Clvm.Puzzles.Casts
 import Clvm.Run
+import Clvm.SmallIntToAtom
 
-import Incubator.SmallIntToAtom
 
 
 

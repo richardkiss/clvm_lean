@@ -1,3 +1,7 @@
+import Mathlib
+
+import Clvm.Ints.ListHelpers
+
 -- goals:
 -- show that our simplest formula for getting the nth digit of a number in base b is correct
 --
@@ -7,10 +11,15 @@
 --  the simple mechanism
 --
 
+/-!
 
-import Mathlib
+We define a function `nat_to_base_b_be` that converts a natural number to a list of digits in base `b`.
 
-import Clvm.Ints.ListHelpers
+We prove that the round-trip conversion is idempotent.
+
+-/
+
+
 
 
 @[simp]

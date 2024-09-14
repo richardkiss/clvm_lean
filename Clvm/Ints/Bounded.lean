@@ -11,9 +11,11 @@ example {a b: Nat} {hb: b ≥ 1} : a - ((a/b) * b) < b := by
   exact Nat.mod_lt a hb
 
 
+/-!
+  as long as d is large enough for a given v value, all digits that come out of
+  nat_to_base_b_be_partial are bounded by b - 1
+-/
 lemma nat_to_base_b_be_partial_bounded_helper {b: Nat} {hb: b > 1}: ∀ d0, ∀ d, ∀ v, d < d0 → v < b ^ (d + 1) → ∀ n ∈ nat_to_base_b_be_partial v d hb, n ≤ b - 1  := by
-  -- as long as d is large enough for a given v value, all digits that come out of
-  -- nat_to_base_b_be_partial are bounded by b - 1
   intro d0
   induction d0 with
   | zero => simp
