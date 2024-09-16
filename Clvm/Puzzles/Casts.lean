@@ -6,9 +6,11 @@ import Clvm.Ints.Basic
 import Clvm.Node
 import Clvm.Run
 
-
 def Q1 : Node := Node.pair 1 1
 
+/-!
+This file is currently unused.
+-/
 
 -- define "rightmost_node" as the atom we hit when we repeatedly go to the right
 def rightmost_node (n: Node): Atom :=
@@ -120,22 +122,6 @@ example : node_to_list Node.nil atoms_only = Except.ok [] := by
 -- set_option maxHeartbeats 1000000
 
 -- (l n) => 0 or 1 depending on whether n is an atom
-
-
-theorem round_trip_int_cast (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by
-  induction zs with
-  | nil => rfl
-  | cons z zs ih =>
-    simp [int_list_to_node_list]
-    simp [node_list_to_node]
-    simp [args_to_int]
-    simp [node_to_list]
-    simp [atom_to_int_cast]
-    simp [only_atoms]
-
-    simp [args_to_int] at ih
-    rw [ih]
-    simp [bind, Except.bind, pure, Except.pure]
 
 
 

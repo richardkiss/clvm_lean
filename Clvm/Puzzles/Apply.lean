@@ -6,8 +6,6 @@ import Clvm.Ints.Basic
 import Clvm.Node
 import Clvm.Run
 
-import Clvm.Puzzles.Casts
-
 
 section Apply
 
@@ -291,9 +289,6 @@ lemma ok_converges_helper {α : Type} (Ok: α → Prop) (F : Nat → α):
       have h1 : Ok (F (a0 + n)) := by
         apply ok_inducts_forever Ok F h0 a0 (a0 + n) (by linarith) h
       apply (h0 (a0 + n) h1)
-
-
-
 
 
 lemma ok_converges_super_helper {α : Type} (Ok: α → Prop) (F : Nat → α):

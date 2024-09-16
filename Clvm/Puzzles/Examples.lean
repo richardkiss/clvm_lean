@@ -12,9 +12,7 @@ import Init.Prelude
 import Init.Tactics
 
 import Clvm.Atom
---import Clvm.Ints.Basic
 import Clvm.Puzzles.Apply
-import Clvm.Puzzles.Casts
 import Clvm.Run
 import Clvm.SmallIntToAtom
 
@@ -24,6 +22,8 @@ import Clvm.SmallIntToAtom
 -- we have here several theorems about running programs
 
 def quote_one : Node := h2n! "ff0101"
+
+
 
 
 -- n is a node. We have (a (q . n) 0) => n
@@ -290,9 +290,25 @@ theorem run_sha256_three_atoms { a1 a2 a3: Atom } : bruns_to [OP_SHA256, 2, 5, 1
 theorem op_add_nil : handle_op_add Node.nil = Except.ok 0 := by rfl
 
 
+theorem round_trip_int_list (zs: List Int) : args_to_int ((node_list_to_node ∘ int_list_to_node_list) zs) = Except.ok zs := by
+  induction zs with
+  | nil => rfl
+  | cons z zs ih =>
+    simp [int_list_to_node_list]
+    simp [node_list_to_node]
+    simp [args_to_int]
+    simp [node_to_list]
+    simp [atom_to_int_cast]
+    simp [only_atoms]
+
+    simp [args_to_int] at ih
+    rw [ih]
+    simp [bind, Except.bind, pure, Except.pure]
+
+
 theorem op_add_n_numbers { zs : List Int } : handle_op_add zs = Except.ok (Node.atom (int_to_atom (zs.foldl (fun a b => (a + b)) 0))) := by
   unfold handle_op_add
-  rw [round_trip_int_cast]
+  rw [round_trip_int_list]
 
 
 def quote_node (n: Node) : Node := Node.pair Node.one n
