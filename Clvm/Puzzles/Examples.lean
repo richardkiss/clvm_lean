@@ -482,7 +482,7 @@ theorem run_add_n_numbers { zs: List Int } : bruns_to (Node.pair OP_ADD (quoted_
 lemma concat_of_quoted_atoms_is_ok (as: List Atom): node_applies (Node.pair (Node.atom [OP_CONCAT]) (quoted_atoms as)) 0 := by
   use 2
   unfold apply_node
-  simp [atom_cast, max_255, OP_CONCAT, OP_Q, OP_A]
+  simp [atom_cast, clip_255, OP_CONCAT, OP_Q, OP_A]
   simp [handle_opcode_for_atom, handle_opcode]
 
   simp [map_err_quoted_atoms_eq_atoms]

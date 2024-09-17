@@ -2,6 +2,8 @@ import Mathlib
 
 import Clvm.H2n
 import Clvm.Hex
+import Clvm.Node
+import Clvm.Run
 import Clvm.SmallIntToAtom
 import Clvm.String
 
@@ -19,6 +21,66 @@ open Lean.Meta
 
 
 open Lean Elab Tactic Meta
+
+
+theorem peel_2_from_h2n: is_ok (h2n s) → s.take 2 = "ff" → h2n! s = Node.pair (h2n_first! (s.drop 2)) (h2n_second! (s.drop 2)) := by
+  intro h h_ff
+  obtain z := h2n_ff s h (s0 := s.drop 2)
+
+  sorry
+
+@[simp]
+lemma string_drop_rw {s: String}: s.drop k = String.mk (s.data.drop k) := by
+  ext n0 c
+  simp only [String.data_drop]
+
+-- goal: come up with a way to rewrite `h2n! "ff..."` to `Node.pair (h2n! "...") (h2n_second! "...")`
+
+
+lemma round_trip_node {n: Node}: n = h2n! (n2h n) := by sorry
+
+
+lemma bruns_to_quote_100: bruns_to (h2n! "ff0164") 0 100 := by
+  have: is_ok (h2n "ff0164") := by
+    simp [is_ok, h2n, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bind, Except.bind, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
+
+  unfold bruns_to
+
+  -- do peel
+  rw [peel_2_from_h2n this (by decide)]
+
+  -- simplify `String.drop`
+  simp only [string_drop_rw, ↓Char.isValue, List.drop_succ_cons, List.drop_zero, String.reduceMk]
+
+  -- swap `h2n_second!` with simpler `h2n!` versions
+  conv in (h2n_second! _) => simp [h2n_second!, h2n_second, h2n_parsed_node!, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE, bind, Except.bind, pure, Except.pure, atom_cast, clip_255]
+  rw [round_trip_node (n := Node.atom { data := [100], lt := _ })]
+  simp [n2h, node_to_bytes, atom_to_serialized_bytes, MAX_SINGLE_BYTE, b2h, nat_to_hex, String.join]
+
+  -- swap `h2n_first!` with simpler `h2n!` versions
+  conv in (h2n_first! _) => simp [h2n_first!, h2n_parsed_node!, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE, bind, Except.bind, pure, Except.pure, atom_cast, clip_255]
+  rw [round_trip_node (n := Node.atom { data := [1], lt := _ })]
+  simp [n2h, node_to_bytes, atom_to_serialized_bytes, MAX_SINGLE_BYTE, b2h, nat_to_hex, String.join]
+
+  -- now let's unfold a level of the program
+  unfold apply_node
+  use 2
+  simp
+  conv in h2n! _ =>
+    simp [h2n!, h2n_parsed_node!, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE, bind, Except.bind, pure, Except.pure, atom_cast, clip_255]
+
+  simp [OP_Q]
+
+  -- we've solved it
+  conv in h2n! _ =>
+    simp [h2n!, h2n_parsed_node!, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE, bind, Except.bind, pure, Except.pure, atom_cast, clip_255]
+
+  simp [OfNat.ofNat]
+  simp [small_int_to_atom]
+
+
+
+
 
 
 
@@ -124,7 +186,7 @@ example : h2n! "ff8022" = Node.pair 0 34 := by
   simp [h2n_second!, h2n_second, h2n_parsed_node, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte,
     Except.pure, pure, bind, Except.bind, bytes_to_parsed_node, bytes_to_atom, MAX_SINGLE_BYTE]
 
-  simp [atom_cast, max_255]
+  simp [atom_cast, clip_255]
   simp [OfNat.ofNat]
   simp [small_int_to_atom]
 

@@ -202,7 +202,7 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
     operator_program depth opcode args env = handle_opcode opcode new_args := by
   simp [apply_node]
   simp [h_depth]
-  simp [atom_cast, max_255]
+  simp [atom_cast, clip_255]
   simp [h_opcode]
   simp [h_not_q]
   simp [h_not_a]

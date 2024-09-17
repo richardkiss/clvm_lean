@@ -165,7 +165,7 @@ lemma tree_atom_works : bruns_to tree_atom_prog (Node.pair 0 (Node.pair (Node.at
   use 50
   unfold tree_atom_prog O_SHA256 OP_SHA256 O_Q
   do_apply_node
-  simp [Atom.to, atom_cast, max_255, OP_Q, OP_SHA256, OP_A]
+  simp [Atom.to, atom_cast, clip_255, OP_Q, OP_SHA256, OP_A]
 
   unfold apply_node
   do_apply_node
@@ -195,7 +195,7 @@ lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pa
     unfold bytes_to_parsed_node
     simp [pure, Except.pure]
     simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, clip_255, bind, Except.bind, pure, Except.pure]
 
   do_apply_node
 
@@ -213,7 +213,7 @@ lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pa
     unfold bytes_to_parsed_node
     simp [pure, Except.pure]
     simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, clip_255, bind, Except.bind, pure, Except.pure]
 
   collapse
 
@@ -237,7 +237,7 @@ lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pa
     unfold bytes_to_parsed_node
     simp [pure, Except.pure]
     simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, clip_255, bind, Except.bind, pure, Except.pure]
 
   have: h2n_second! "ff03ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" =
     h2n! "ffff07ff0580ffff01ff0bffff0102ffff02ff02ffff04ff02ffff04ff09ff80808080ffff02ff02ffff04ff02ffff04ff0dff8080808080ffff01ff0bffff0101ff058080ff0180" := by
@@ -259,7 +259,7 @@ lemma sha256tree_func_atom_works { a: Atom } : bruns_to sha256tree_func (Node.pa
   unfold bytes_to_parsed_node
   simp [pure, Except.pure]
   simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-  simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+  simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, clip_255, bind, Except.bind, pure, Except.pure]
 
 
   simp [map_or_err]
@@ -310,7 +310,7 @@ lemma tree_works: bruns_to sha256tree_func (Node.pair sha256tree_func (Node.pair
     simp [Nat.isValidChar]
     simp [pure, Except.pure]
     simp [bytes_to_parsed_node, h2b_lc, bind, Except.bind, pure, Except.pure, hex_pair_to_byte, hex_nibble_to_byte, Char.toLower, Char.ofNat, Nat.isValidChar, pure, Except.pure, bytes_to_parsed_node, bytes_to_atom]
-    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, max_255, bind, Except.bind, pure, Except.pure]
+    simp [MAX_SINGLE_BYTE, bytes_to_parsed_node, bytes_to_atom, atom_cast, clip_255, bind, Except.bind, pure, Except.pure]
 
     simp [OP_Q, OP_A]
 

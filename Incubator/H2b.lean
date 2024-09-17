@@ -105,8 +105,10 @@ lemma peel_2_from_h2b: is_ok (h2b s) → s.data.length ≥ 2 → h2b! s = [hex_p
 -- Example usage
 example : h2b! "ff0022" = [255] ++ h2b! "0022" := by
   apply peel_2_from_h2b
-  simp [is_ok, h2b_lc, hex_pair_to_byte, hex_nibble_to_byte, Except.bind, bind]
-  simp [String.length]
+  · simp [is_ok]
+    apply Exists.intro
+    rfl
+  · simp [String.length]
 
   --hex_to_bytes "ff0022"
   --hex_to_bytes "0022"

@@ -29,37 +29,32 @@ instance : CoeOut Atom (List Nat) := ⟨fun a => a.data⟩
 instance : CoeOut Atom (Array Nat) := ⟨fun a => a.data.toArray⟩
 
 
-def max_255 (n: Nat) : Nat := if n ≤ 255 then n else 255
+def clip_255 (n: Nat) : Nat := if n ≤ 255 then n else 255
 
 
+/--!
+If we have a list `as` and P f(a) is true for all a, then P b is true for all b in as.map f.
+This is pretty obvious.
+-/
 theorem map_prop_dist_for_all {P: β → Prop } { as: List α } { f: α → β } :  (∀ a, P (f a)) → ∀ b ∈ as.map f, (P b) := by
-  intro h0
-  intro b0
-  simp
-  intro a0
-  intro _
-  intro h2
-  rewrite [← h2]
-  exact h0 a0
+  simp_all only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, implies_true]
 
 
-theorem max_yields_limited_list (bs: List Nat): ∀ b ∈ bs.map max_255, b ≤ 255 := by
+theorem clip_yields_limited_list (bs: List Nat): ∀ b ∈ bs.map clip_255, b ≤ 255 := by
   apply map_prop_dist_for_all
-  simp [max_255]
-  intro b0
-  by_cases h: b0 ≤ 255
-  simp [h]
-  simp [h]
+  simp only [clip_255]
+  intro h
+  split_ifs <;> simp_all
 
 
 /-! A simple cast that pins too-large values to 255 -/
 
 def atom_cast (a: List Nat) : Atom :=
-  let new_a : List Nat := a.map max_255
-  have h_new_a: new_a = a.map max_255 := by simp
+  let new_a : List Nat := a.map clip_255
+  have h_new_a: new_a = a.map clip_255 := by simp
   let proof : ∀ n ∈ new_a, n ≤ 255 := by
     rw [h_new_a]
-    exact max_yields_limited_list a
+    exact clip_yields_limited_list a
   ⟨new_a, proof⟩
 
 

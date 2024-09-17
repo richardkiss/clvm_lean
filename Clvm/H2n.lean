@@ -55,7 +55,10 @@ lemma h2n_ok_parsed_node_ok (s: String): is_ok (h2n s) → is_ok (h2n_parsed_nod
   obtain ⟨c, h1⟩ := not_ok h_c
   simp [h2n, h1, bind, Except.bind, is_ok] at h
 
-
+/-!
+a hex string that deserializes into a clvm object that starts with `ff` is a pair. This theorem
+shows how to get the left and right side of the pair.
+-/
 theorem h2n_ff (s: String): is_ok (h2n s) → s = "ff" ++ s0 → h2n s = Except.ok (Node.pair (h2n_first! s0) (h2n_second! s0)) := by
   intro h0 h1
 
@@ -108,6 +111,10 @@ theorem h2n_ff (s: String): is_ok (h2n s) → s = "ff" ++ s0 → h2n s = Except.
 lemma h2n_first!_eq_h2n!: h2n_first! s = h2n! s := by rw [h2n_first!, h2n!]
 
 
+/-!
+A nicer version of `h2n_ff` that uses `h2n!`. This will go into a tactic that will strip off
+a `ff` prefix from a hex string and yank out the parts of the string that matter.
+-/
 theorem h2n!_split (s: String): is_ok (h2n s) → s.take 2 = "ff" → h2n! s = Node.pair (h2n_first! (s.drop 2)) (h2n_second! (s.drop 2)) := by
   intro h0 h1
   have h: s = "ff" ++ s.drop 2 := by

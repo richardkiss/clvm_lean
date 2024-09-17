@@ -21,7 +21,9 @@ def equalize (a0 b0 : Array Nat) : (Array Nat × Array Nat) :=
   else
     (a0, b0)
 
-
+/-!
+remove unnecessary prefixes from an array that preserve the twos complement value
+-/
 def minimize (depth : Nat) (a : Array Nat) : Array Nat :=
   if depth = 0 then
     a
