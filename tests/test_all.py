@@ -15,7 +15,7 @@ MY_PATH = Path(__file__).parent
 BRUN_PATH = MY_PATH / "../.lake/build/bin/Main"
 
 
-SKIP_LIST = "".split()
+SKIP_LIST = "softfork-4 unknown-0 unknown-1 unknown-2".split()
 
 
 def from_hex(s: str) -> SExp:

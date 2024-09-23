@@ -32,7 +32,7 @@ def minimize (depth : Nat) (a : Array Nat) : Array Nat :=
     match first with
     | none => a
     | some 0 => match a[1]? with
-      | none => a
+      | none => #[]
       | some x => if x &&& 0x80 = 0 then
         minimize (depth - 1) (a.extract 1 a.size)
       else
