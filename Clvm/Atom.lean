@@ -89,4 +89,4 @@ def int_to_atom (z: Int) : Atom :=
 
 @[simp]
 theorem round_trip_int (z: Int) : atom_to_int (int_to_atom z) = z := by
-  simp [atom_to_int, int_to_atom, round_trip_twos_comp]
+  simp only [atom_to_int, int_to_atom, round_trip_twos_comp]

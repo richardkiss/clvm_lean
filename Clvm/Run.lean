@@ -200,13 +200,13 @@ theorem not_quote_or_atom {depth opcode: Nat} {args env: Node}
   {h_not_a: opcode ≠ OP_A}
   (h_map_or_err: (map_or_err (fun node => apply_node (depth-1) node env) args = Except.ok new_args)) :
     operator_program depth opcode args env = handle_opcode opcode new_args := by
-  simp [apply_node]
-  simp [h_depth]
-  simp [atom_cast, clip_255]
-  simp [h_opcode]
-  simp [h_not_q]
-  simp [h_not_a]
-  simp [handle_opcode_for_atom, bind, Except.bind]
+  simp only [operator_program, apply_node]
+  simp only [h_depth, ↓reduceIte]
+  simp only [atom_cast, List.map_cons, clip_255, List.map_nil, List.cons.injEq, and_true]
+  simp only [h_opcode, ↓reduceIte]
+  simp only [h_not_q, ↓reduceIte]
+  simp only [h_not_a, ↓reduceIte]
+  simp only [bind, Except.bind, handle_opcode_for_atom]
   rw [h_map_or_err]
 
 

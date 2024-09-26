@@ -50,7 +50,8 @@ lemma nat_to_base_b_partial_length_helper {b: Nat} (extra_digits: Nat) (hb: b>1)
   | succ n ih =>
     intro v
     unfold List.length nat_to_base_b_be_partial
-    simp
+    simp only [AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false, ↓reduceIte,
+      most_sig_digit_of_v_in_base_b_be, add_tsub_cancel_right, add_left_inj]
     rw [ih]
 
 
@@ -65,7 +66,8 @@ def nat_to_base_b_be {b: Nat} (v: Nat) (hb: b>1): List Nat :=
 lemma len_nat_to_base_b_be_partial {b: Nat} (hb: b>1): ∀ d, (∀ v, (nat_to_base_b_be_partial v d hb).length = d + 1) := by
   intros d
   induction d with
-  | zero => simp ; simp [nat_to_base_b_be_partial]
+  | zero => simp [nat_to_base_b_be_partial, ↓reduceIte, List.length_singleton, zero_add,
+    implies_true]
   | succ d ih =>
     unfold nat_to_base_b_be_partial
     simp [ih]
@@ -82,11 +84,10 @@ def base_b_be_to_nat := base_b_be_to_nat_inner 0
 
 lemma base_b_be_to_nat_inner_extract_k_helper: ∀ k, base_b_be_to_nat_inner k ds b = k + base_b_be_to_nat_inner 0 ds b := by
   induction ds with
-  | nil => unfold base_b_be_to_nat_inner ; simp
+  | nil => simp [base_b_be_to_nat_inner]
   | cons head tail ih =>
     intro k0
     unfold base_b_be_to_nat_inner
-    simp
     rw [ih]
     conv_rhs => rw [ih]
     ring
@@ -103,9 +104,10 @@ theorem partial_round_trip {b d : Nat} {hb: b > 1}: ∀ n, (base_b_be_to_nat_inn
   | succ d0 ih =>
     intro n0
     unfold nat_to_base_b_be_partial
-    simp
+    simp only [AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false, ↓reduceIte,
+      most_sig_digit_of_v_in_base_b_be, add_tsub_cancel_right]
     unfold base_b_be_to_nat_inner
-    simp
+    simp only [zero_add]
     rw [base_b_be_to_nat_inner_extract_k]
     rw [len_nat_to_base_b_be_partial]
     rw [ih]

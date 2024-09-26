@@ -25,13 +25,13 @@ lemma nat_to_base_b_be_partial_bounded_helper {b: Nat} {hb: b > 1}: ∀ d0, ∀ 
     intro h
     intro h1
     unfold nat_to_base_b_be_partial
-    simp
+    simp only [most_sig_digit_of_v_in_base_b_be]
     if hd: d = 0 then
-      simp [hd]
-      simp [hd] at h1
+      simp only [hd, ↓reduceIte, List.mem_singleton, forall_eq]
+      simp only [hd, zero_add, pow_one] at h1
       exact Nat.le_sub_one_of_lt h1
     else
-      simp [hd]
+      simp only [hd, ↓reduceIte, List.mem_cons, forall_eq_or_imp]
       constructor
       have h2: v / b ^ d < b := by
         exact Nat.div_lt_of_lt_mul h1
@@ -47,7 +47,7 @@ lemma nat_to_base_b_be_partial_bounded_helper {b: Nat} {hb: b > 1}: ∀ d0, ∀ 
           exact pow_pos hb0 d
         exact hbd0
       have h4: (v - v / b ^ d * b ^ d) < b ^ (d - 1 + 1) := by
-        simp [hd_ge_1]
+        simp only [hd_ge_1, Nat.sub_add_cancel]
         rw [mod_formula]
         exact Nat.mod_lt v h_bd
       exact ih (d-1) (v - v / b ^ d * b ^ d) h3 h4
@@ -83,7 +83,8 @@ lemma nat_to_base_b_be_partial_form_bounded: z ≠ 0 → ∀ n ∈ nat_to_base_b
         have h_z999: (neg_to_base_b_be.power_exp z neg_to_twos_comp.as_nat.proof_1).k ≥ 1 := by
           apply (neg_to_base_b_be.power_exp z neg_to_twos_comp.as_nat.proof_1).ngtz_kgtz
           exact h_abs_z_gt_0
-        simp [h_z999]
+        simp only [h_z999, Nat.sub_add_cancel, tsub_lt_self_iff, Nat.ofNat_pos, pow_pos,
+          Int.natAbs_pos, ne_eq, true_and]
         assumption
 
 

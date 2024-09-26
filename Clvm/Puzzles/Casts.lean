@@ -66,8 +66,8 @@ lemma args_to_int_okay_nil_terminated: is_ok (args_to_int n) → (is_nil_termina
   unfold node_to_list at h0
   match n with
   | Node.atom ⟨ [], _ ⟩ =>
-    simp [Atom.length] at h1
-    simp [rightmost_node] at h1
+    rw [Atom.length, List.length_eq_zero] at h1
+    simp only [rightmost_node, not_true_eq_false] at h1
   | Node.atom ⟨ head :: tail, lt ⟩ =>
     simp at h0
     sorry
@@ -80,7 +80,8 @@ theorem try_int_list_to_node_list_general {zs : List Int} : (int_list_to_node_li
   | nil => simp [int_list_to_node_list]
   | cons z0 z_tail ih =>
     unfold int_list_to_node_list List.map
-    simp
+    simp only [List.pure_def, List.bind_eq_bind, List.bind_cons, round_trip_int,
+      List.singleton_append, List.cons.injEq, true_and]
     rw [ih]
     rfl
 

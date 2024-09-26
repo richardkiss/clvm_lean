@@ -75,7 +75,7 @@ lemma neg_z: z < 0 → Int.negSucc (Int.natAbs z - 1) = z := by
   induction z with
   | ofNat n0 =>
     intro h0
-    simp at h0
+    simp only [Int.ofNat_eq_coe] at h0
     linarith
   | negSucc n0 => simp
 
@@ -88,35 +88,34 @@ lemma abs_neg_gt_0 : z < 0 → Int.natAbs z > 0 := by
   | negSucc _ => linarith
 
 
-theorem round_trip_neg {hb: b > 1}: (z < 0) → base_b_be_to_neg (neg_to_base_b_be z hb) b = z := by
+theorem round_trip_neg {z: Int} {hb: b > 1}: (z < 0) → base_b_be_to_neg (neg_to_base_b_be z hb) b = z := by
   intro h_z_lt_0
   unfold neg_to_base_b_be
   unfold base_b_be_to_neg
   unfold base_b_be_to_nat
-  simp [partial_round_trip]
-  simp [nat_to_base_b_partial_length]
-  simp [neg_to_base_b_be.power_exp]
+  rw [partial_round_trip]
+  rw [nat_to_base_b_partial_length]
+  rw [neg_to_base_b_be.power_exp]
   have h_abs_neg_gt_0: Int.natAbs z > 0 := abs_neg_gt_0 h_z_lt_0
   have h_k_gt_0: (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).k ≥ 1 := by
     exact (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).ngtz_kgtz h_abs_neg_gt_0
-  simp [h_k_gt_0]
+  simp only [h_k_gt_0, Nat.sub_add_cancel]
   rw [← (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).eq]
   have h_pow_ge : Int.natAbs z ≤ (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).pow := by
     have h_pow_gt: Int.natAbs z < (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).pow := (min_power_of_b_exceeding_n_and_exponent b (Int.natAbs z) hb).gt
     linarith
-  simp [h_pow_ge, Nat.sub_sub_self]
+  simp only [h_pow_ge, Nat.sub_sub_self]
   exact neg_z h_z_lt_0
-    where kmpb := min_power_of_b_exceeding_n_and_exponent b z.natAbs hb
 
 
 lemma prefix_idemopotent_neg_to_base_b_be {hb: b>1} : base_b_be_to_neg ((b-1) :: ns) b = base_b_be_to_neg ns b := by
   unfold base_b_be_to_neg
-  simp [base_b_be_to_nat]
+  simp only [List.length_cons, base_b_be_to_nat, Int.negSucc.injEq]
   rw [Nat.pow_add]
-  simp [base_b_be_to_nat_inner]
+  simp only [pow_one, base_b_be_to_nat_inner, zero_add]
   conv_lhs => rw [base_b_be_to_nat_inner_extract_k]
   rw [Nat.sub_add_eq, Nat.mul_comm, ← Nat.mul_sub_right_distrib, Nat.sub_sub_self]
-  simp
+  rw [one_mul]
   linarith
 
 
@@ -152,7 +151,7 @@ def int_to_twos_comp (z: Int) : List Nat :=
 theorem pos_to_twos_comp_has_msb_not_set : ¬ is_msb_set (pos_to_twos_comp z) := by
   unfold pos_to_twos_comp
   if h1: is_msb_set (pos_to_twos_comp.as_nat z) = true then
-    simp [h1]
+    simp only [h1, ↓reduceIte, Bool.not_eq_true]
     rfl
   else
     simp [h1]
@@ -182,29 +181,29 @@ lemma round_trip_twos_comp_pos : z > 0 → twos_comp_to_int (int_to_twos_comp z)
   rw [int_to_twos_comp]
   have h_z_ne_0 : z ≠ 0 := by linarith
   have h_z_nlt_0 : ¬ z < 0 := by linarith
-  simp [h_z_ne_0, h_z_nlt_0]
+  simp only [h_z_ne_0, ↓reduceIte, h_z_nlt_0]
   rw [twos_comp_to_int]
-  simp [pos_to_twos_comp_has_msb_not_set]
+  simp only [pos_to_twos_comp_has_msb_not_set, Bool.false_eq_true, ↓reduceIte]
   unfold pos_to_twos_comp
   if h: is_msb_set (pos_to_twos_comp.as_nat (Int.natAbs z)) = true then
-    simp [h]
+    simp only [h, ↓reduceIte]
     unfold pos_to_twos_comp.as_nat
     rw [prefix_idemopotent_nat_to_base_b_be]
-    simp [nat_round_trip]
+    simp only [nat_round_trip, Int.natCast_natAbs, abs_eq_self, ge_iff_le]
     linarith
   else
-    simp [h]
+    simp only [h, Bool.false_eq_true, ↓reduceIte]
     unfold pos_to_twos_comp.as_nat
-    simp [nat_round_trip]
+    simp only [nat_round_trip, Int.natCast_natAbs, abs_eq_self, ge_iff_le]
     linarith
 
 
 lemma neg_to_twos_comp_has_msb_set: is_msb_set (neg_to_twos_comp z) = true := by
   unfold neg_to_twos_comp
   if h: is_msb_set (neg_to_twos_comp.as_nat z) = true then
-    simp [h]
+    simp only [h, ↓reduceIte]
   else
-    simp [h]
+    simp only [h, Bool.false_eq_true, ↓reduceIte]
     rfl
 
 
@@ -212,17 +211,14 @@ lemma round_trip_twos_comp_neg : z < 0 → twos_comp_to_int (int_to_twos_comp z)
   intro h_z_lt_0
   rw [int_to_twos_comp]
   have h_z_ne_0 : z ≠ 0 := by linarith
-  simp [h_z_ne_0, h_z_lt_0]
+  simp only [h_z_ne_0, ↓reduceIte, h_z_lt_0]
   rw [twos_comp_to_int]
-  simp [neg_to_twos_comp_has_msb_set]
+  simp only [neg_to_twos_comp_has_msb_set, ↓reduceIte]
   unfold neg_to_twos_comp
-  if h: (is_msb_set (neg_to_twos_comp.as_nat z) = true) then
-    simp [h]
-    unfold neg_to_twos_comp.as_nat
+  split_ifs with h
+  · unfold neg_to_twos_comp.as_nat
     exact (round_trip_neg h_z_lt_0)
-  else
-    simp [h]
-    have h255: 255 = 256 - 1 := by rfl
+  · have h255: 255 = 256 - 1 := by rfl
     rw [h255]
     rw [prefix_idemopotent_neg_to_base_b_be]
     unfold neg_to_twos_comp.as_nat
