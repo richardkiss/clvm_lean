@@ -3,7 +3,7 @@ import Clvm.Casts
 import Clvm.Coe
 import Clvm.H2n
 import Clvm.Node
-import Clvm.Hex
+import Clvm.H2b
 import Clvm.Puzzles.Basic
 import Clvm.Run
 import Clvm.Serde

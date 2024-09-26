@@ -1,5 +1,5 @@
 import Clvm.Atom
-import Clvm.Hex
+import Clvm.H2b
 
 import Init.Data.Nat.Div
 

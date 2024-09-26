@@ -1,7 +1,7 @@
 import Mathlib
 
 import Clvm.H2n
-import Clvm.Hex
+import Clvm.H2b
 import Clvm.SmallIntToAtom
 import Clvm.String
 

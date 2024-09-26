@@ -1,4 +1,4 @@
-import Clvm.Hex
+import Clvm.H2b
 import Clvm.Node
 import Clvm.Ecdsa.Basic
 import Clvm.Ecdsa.Bls12381
